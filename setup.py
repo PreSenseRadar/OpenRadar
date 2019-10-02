@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mmwave",
-    version="0.0.1",
+    version="0.9.0",
     description="A mmWave radar data processing library",
     long_description=long_description,
     long_description_content_type="text/markdown",

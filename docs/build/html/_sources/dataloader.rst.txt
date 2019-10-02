@@ -1,6 +1,0 @@
-
-
-
-.. autoclass:: mmwave.dataloader.DCA1000
-	:members:
-

@@ -1,7 +1,7 @@
 Welcome to the mmwave docs!
 ==================================
 
-.. image:: images/presense_logo.png
+.. image:: _static/img/presense_logo.png
    :scale: 50
    :align: center
 

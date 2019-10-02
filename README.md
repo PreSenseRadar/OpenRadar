@@ -1,15 +1,22 @@
 # PreSense mmWave Package
 
 This is PreSense team's implementation of TI mmwave radar DSP stack and some demos.
-We are grateful for TI, TI's e2e forum and other people's help to make this happen. 
-
-**Please submit issues if you found any bugs or have any suggestions. Please star us if you like this repository and please consider citing this repo if you used it in your research.**
+We are grateful for TI, TI's e2e forum and other people's help to make this happen.
+Please star us if you like this repository and please consider citing this repo if you used it in your research.
 
 The toolbox is modularized into separate steps
 1. Reading raw ADC data.
 2. Preprocessing data in DSP stack.
 3. Utilizing preprocessed data for tracking, clustering and machine learning.
-4. Different demo implementations from TI.
+4. Different demo implementations from TI and our own explorations.
+
+## Documentation
+- [readthedocs](openradar.readthedocs.io)
+
+## Contact 
+
+- Please submit issues to our [GitHub](https://github.com/presenseradar/openradar) if you found any bugs or have any suggestions
+- For anything else, send an email at presenseradar@gmail.com
 
 ## Directory Structure
     .
@@ -41,6 +48,7 @@ The toolbox is modularized into separate steps
 ```
 git clone https://github.com/presenseradar/openradar
 cd openradar
+pip install -r requirements.txt
 python setup.py develop
 ```
 
@@ -50,7 +58,7 @@ python setup.py develop
 pip uninstall mmwave
 ```
 
-## Usage
+## Example Import and Usage
 
 ```python
 import mmwave as mm
@@ -58,5 +66,5 @@ from mmwave.dataloader import DCA1000
 
 dca = DCA1000()
 adc_data = dca.read()
-radar_cube = mm.dsp.rangeProcessing(adc_data)
+radar_cube = mm.dsp.range_processing(adc_data)
 ```

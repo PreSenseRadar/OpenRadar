@@ -1,12 +1,23 @@
+# sphinx build files
+doc/build
+
+# setup.py
+*.egg-info
+build
+dist
+
+# jupyter notebook
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
 venv/
 .vscode/
 .cache/
 __pycache__/
 *.pyc
-*.egg-info
 .idea/
-
 data/
 .DS_Store
-.ipynb_checkpoints/
-*/.ipynb_checkpoints/*
+
+
+

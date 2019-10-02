@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     # (1) Reading in adc data
     if loadData:
-        adc_data = np.fromfile('../../data/awr1843/1_person_walking_128loops.bin', dtype=np.uint16)
+        adc_data = np.fromfile('./data/1_person_walking_128loops.bin', dtype=np.uint16)
         adc_data = adc_data.reshape(numFrames, -1)
         adc_data = np.apply_along_axis(DCA1000.organize, 1, adc_data, num_chirps=numChirpsPerFrame,
                                        num_rx=numRxAntennas, num_samples=numADCSamples)
@@ -180,7 +180,7 @@ if __name__ == '__main__':
         xyzVecN[2] = z * range_resolution * detObj2D['rangeIdx']
 
         Psi, Theta, Ranges, xyzVec = dsp.beamforming_naive_mixed_xyz(azimuthInput, detObj2D['rangeIdx'],
-                                                                     range_resolution, method='Capon')
+                                                                     range_resolution, method='Bartlett')
 
         # (5) 3D-Clustering
         # detObj2D must be fully populated and completely accurate right here
