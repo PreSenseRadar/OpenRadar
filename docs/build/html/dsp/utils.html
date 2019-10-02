@@ -1,0 +1,166 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mmwave.dsp.utils &#8212; mmwave 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mmwave.dsp.ZoomFFT" href="zoom_fft.html" />
+    <link rel="prev" title="mmwave.dsp.range_processing" href="range_processing.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mmwave-dsp-utils">
+<h1>mmwave.dsp.utils<a class="headerlink" href="#mmwave-dsp-utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="mmwave.dsp.utils.windowing">
+<code class="descclassname">mmwave.dsp.utils.</code><code class="descname">windowing</code><span class="sig-paren">(</span><em>input</em>, <em>window_type</em>, <em>axis=0</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.utils.windowing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Window the input based on given window type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>input</strong> – input numpy array to be windowed.</li>
+<li><strong>window_type</strong> – enum chosen between Bartlett, Blackman, Hamming, Hanning and Kaiser.</li>
+<li><strong>axis</strong> – the axis along which the windowing will be applied.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.utils.XYestimation">
+<code class="descclassname">mmwave.dsp.utils.</code><code class="descname">XYestimation</code><span class="sig-paren">(</span><em>azimuthMagSqr</em>, <em>numAngleBins</em>, <em>detObj2D</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.utils.XYestimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the phase information from 3D FFT, calculate the XY position of the objects and populate the detObj2D array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>azimuthMagSqr</strong> – (numDetObj, numAngleBins) Magnitude square of the 3D FFT output.</li>
+<li><strong>numAngelBins</strong> – hardcoded as 64 in our project.</li>
+<li><strong>detObj2D</strong> – Output yet to be populated with the calculated X, Y and Z information</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">mmwave</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../dataloader/index.html">mmwave.dataloader</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">mmwave.dsp</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="angle_estimation.html">mmwave.dsp.angle_estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cfar.html">mmwave.dsp.cfar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compensation.html">mmwave.dsp.compensation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doppler_processing.html">mmwave.dsp.doppler_processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise_removal.html">mmwave.dsp.noise_removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="range_processing.html">mmwave.dsp.range_processing</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mmwave.dsp.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zoom_fft.html">mmwave.dsp.ZoomFFT</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tracking/index.html">mmwave.tracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../clustering/index.html">mmwave.clustering</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">mmwave.dsp</a><ul>
+      <li>Previous: <a href="range_processing.html" title="previous chapter">mmwave.dsp.range_processing</a></li>
+      <li>Next: <a href="zoom_fft.html" title="next chapter">mmwave.dsp.ZoomFFT</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Arjun, Charles, Dash, Edwin, Jingning, Ruihao.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/dsp/utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

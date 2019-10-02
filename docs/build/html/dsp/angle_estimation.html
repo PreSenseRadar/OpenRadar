@@ -1,0 +1,659 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mmwave.dsp.angle_estimation &#8212; mmwave 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mmwave.dsp.cfar" href="cfar.html" />
+    <link rel="prev" title="mmwave.dsp" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mmwave-dsp-angle-estimation">
+<h1>mmwave.dsp.angle_estimation<a class="headerlink" href="#mmwave-dsp-angle-estimation" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.azimuth_processing">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">azimuth_processing</code><span class="sig-paren">(</span><em>radar_cube</em>, <em>det_obj_2d</em>, <em>config</em>, <em>window_type_2d=None</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.azimuth_processing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the X/Y coordinates for all detected objects.</p>
+<p>The following procedures will be performed in this function:</p>
+<ol class="arabic simple">
+<li>Filter radarCube based on the range indices from detObj2D and optional clutter removal.</li>
+<li>Re-do windowing and 2D FFT, select associated doppler indices to form the azimuth input.</li>
+<li>Doppler compensation on the virtual antennas related to tx2. Save optional copy for near field compensation and      velocity disambiguation.</li>
+<li>Perform azimuth FFT.</li>
+<li>Optional near field correction and velocity disambiguation. Currently mutual exclusive.</li>
+<li>Magnitude squared.</li>
+<li>Calculate X/Y coordinates.</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>radar_cube</strong> – (numChirpsPerFrame, numRxAntennas, numRangeBins). Because of the space limitation, TI Demo starts again
+from the 1D FFT, recalculate the 2D FFT on the selected range bins and pick the associated doppler bins for the
+azimuth FFT.</li>
+<li><strong>det_obj_2d</strong> – (numDetObj, 3)</li>
+<li><strong>config</strong> – [TBD]</li>
+<li><strong>window_type_2d</strong> – windowing function for the 2D FFT. Default is None.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(numDetObj, 5). Copy of detObj2D but with populated X/Y coordinates.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">azimuthOut</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.aoa_bartlett">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">aoa_bartlett</code><span class="sig-paren">(</span><em>steering_vec</em>, <em>sig_in</em>, <em>axis</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.aoa_bartlett" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform AOA estimation using Bartlett Beamforming on a given input signal (sig_in). Make sure to specify the correct axis in (axis)
+to ensure correct matrix multiplication. The power spectrum is calculated using the following equation:</p>
+<div class="math notranslate nohighlight">
+\[P_{ca} (\theta) = a^{H}(\theta) R_{xx}^{-1} a(\theta)\]</div>
+<p>This steers the beam using the steering vector as weights:</p>
+<div class="math notranslate nohighlight">
+\[w_{ca} (\theta) = a(\theta)\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>steering_vec</strong> (<em>ndarray</em>) – A 2D-array of size (numTheta, num_ant) generated from gen_steering_vec</li>
+<li><strong>sig_in</strong> (<em>ndarray</em>) – Either a 2D-array or 3D-array of size (num_ant, numChirps) or (numChirps, num_vrx, num_adc_samples) respectively, containing ADC sample data sliced as described</li>
+<li><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Specifies the axis where the Vrx data in contained.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A 3D-array of size (numChirps, numThetas, numSamples)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">doa_spectrum (ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># In this example, dataIn is the input data organized as numFrames by RDC</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dataIn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">((</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">num_chirps</span><span class="p">,</span> <span class="n">num_vrx</span><span class="p">,</span> <span class="n">num_adc_samples</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aoa_bartlett</span><span class="p">(</span><span class="n">steering_vec</span><span class="p">,</span><span class="n">dataIn</span><span class="p">[</span><span class="n">frame</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.aoa_capon">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">aoa_capon</code><span class="sig-paren">(</span><em>steering_vec</em>, <em>rx_chirp_slice</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.aoa_capon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform AOA estimation using Capon (MVDR) Beamforming on a rx by chirp slice</p>
+<p>Calculate the aoa spectrum via capon beamforming method using one full frame as input.
+This should be performed for each range bin to achieve AOA estimation for a full frame
+This function will calculate both the angle spectrum and corresponding Capon weights using
+the equations prescribed below.</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}P_{ca} (\theta) = \frac{1}{a^{H}(\theta) R_{xx}^{-1} a(\theta)}\\w_{ca} (\theta) = \frac{R_{xx}^{-1} a(\theta)}{a^{H}(\theta) R_{xx}^{-1} a(\theta)}\end{aligned}\end{align} \]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>steering_vec</strong> (<em>ndarray</em>) – A 2D-array of size (numTheta, num_ant) generated from gen_steering_vec</li>
+<li><strong>rx_chirp_slice</strong> (<em>ndarray</em>) – Output of the 1d range fft with shape (num_ant, numChirps)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list containing numVec and steeringVectors
+den (ndarray: A 1D-Array of size (numTheta) containing azimuth angle estimations for the given range
+weights (ndarray): A 1D-Array of size (num_ant) containing the Capon weights for the given input data</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># In this example, dataIn is the input data organized as numFrames by RDC</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Frame</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dataIn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">((</span><span class="n">num_frames</span><span class="p">,</span> <span class="n">num_chirps</span><span class="p">,</span> <span class="n">num_vrx</span><span class="p">,</span> <span class="n">num_adc_samples</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">256</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">scan_aoa_capon</span><span class="p">[</span><span class="n">i</span><span class="p">,:],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dss</span><span class="o">.</span><span class="n">aoa_capon</span><span class="p">(</span><span class="n">steering_vec</span><span class="p">,</span><span class="n">dataIn</span><span class="p">[</span><span class="n">Frame</span><span class="p">,:,:,</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.cov_matrix">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">cov_matrix</code><span class="sig-paren">(</span><em>input_data</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.cov_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the covariance matrix (Rxx) for a given set of input data (x=inputData)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>input_data</strong> (<em>ndarray</em>) – A 2D-Array with shape (rx, adc_samples) slice of the output of the 1D range fft</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A 2D-Array with shape (rx, rx)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Rxx (ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.forward_backward_avg">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">forward_backward_avg</code><span class="sig-paren">(</span><em>Rxx</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.forward_backward_avg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs forward backward averaging on the given input square matrix</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rxx</strong> (<em>ndarray</em>) – A 2D-Array square matrix containing the covariance matrix for the given input data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The 2D-Array square matrix containing the forward backward averaged covariance matrix</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">R_fb (ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.peak_search">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">peak_search</code><span class="sig-paren">(</span><em>doa_spectrum</em>, <em>peak_threshold_weight=0.251188643150958</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.peak_search" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Wrapper function to perform scipy.signal’s prescribed peak search algorithm</dt>
+<dd>Tested Runtime: 45 µs ± 2.61 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>doa_spectrum</strong> (<em>ndarray</em>) – A 1D-Array of size (numTheta, 1) containing the theta spectrum at a given range bin</li>
+<li><strong>peak_threshold_weight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – A float specifying the desired peak declaration threshold weight to be applied</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The number of max points found by the algorithm
+peaks (list): List of indexes where peaks are located
+total_power (float): Total power in the current spectrum slice</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">num_max (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.peak_search_full">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">peak_search_full</code><span class="sig-paren">(</span><em>doa_spectrum</em>, <em>gamma=1.2</em>, <em>peak_threshold_weight=0.251188643150958</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.peak_search_full" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform TI prescribed peak search algorithm
+Tested Runtime: 147 µs ± 4.27 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>doa_spectrum</strong> (<em>ndarray</em>) – A 1D-Array of size (numTheta, 1) containing the theta spectrum at a given range bin</li>
+<li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – A float specifying the maximum/minimum wiggle necessary to qualify as a peak</li>
+<li><strong>peak_threshold_weight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – A float specifying the desired peak declaration threshold weight to be applied</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The number of max points found by the algorithm
+ang_est (list): List of indexes where the peaks are located</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">num_max (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.peak_search_full_variance">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">peak_search_full_variance</code><span class="sig-paren">(</span><em>doa_spectrum</em>, <em>steering_vec_size</em>, <em>sidelobe_level=0.251188643150958</em>, <em>gamma=1.2</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.peak_search_full_variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs peak search (TI’s full search) will retaining details about each peak including
+each peak’s width, location, and value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>doa_spectrum</strong> (<em>ndarray</em>) – a 1D numpy array containing the power spectrum generated via some aoa method (naive,</li>
+<li><strong>or capon</strong><strong>)</strong> (<em>bartlett</em><em>,</em>) – </li>
+<li><strong>steering_vec_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Size of the steering vector in terms of number of theta bins</li>
+<li><strong>sidelobe_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – A low value threshold used to avoid sidelobe detections as peaks</li>
+<li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Weight to determine when a peak will pass as a true peak</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A 1D numpy array of custom data types with length numberOfPeaksDetected.
+Each detected peak is organized as [peak_location, peak_value, peak_width]
+total_power (float): The total power of the spectrum. Used for variance calculations</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">peak_data (ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.variance_estimation">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">variance_estimation</code><span class="sig-paren">(</span><em>num_max</em>, <em>est_resolution</em>, <em>peak_data</em>, <em>total_power</em>, <em>width_adjust_3d_b=2.5</em>, <em>input_snr=10000</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.variance_estimation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This function will calculate an estimated variance value for each detected peak. This should</dt>
+<dd>be run after running peak_search_full_variance</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>num_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of detected peaks</li>
+<li><strong>est_resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The desired resolution in terms of theta</li>
+<li><strong>peak_data</strong> (<em>ndarray</em>) – A numpy array of dictionaries, where each dictionary is of the form: {“peakLoc”: , “peakVal”: , “peakWid”: }</li>
+<li><strong>total_power</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The total power of the spectrum</li>
+<li><strong>width_adjust_3d_b</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Constant to adjust the gamma bandwidth to 3dB level</li>
+<li><strong>input_snr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – the linear snr for the input signal samples</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A 1D array of variances (of the peaks). The order of the peaks is preserved from peak_data</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">est_var (ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.gen_steering_vec">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">gen_steering_vec</code><span class="sig-paren">(</span><em>ang_est_range</em>, <em>ang_est_resolution</em>, <em>num_ant</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.gen_steering_vec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a steering vector for AOA estimation given the theta range, theta resolution, and number of antennas</p>
+<p>Defines a method for generating steering vector data input –Python optimized Matrix format
+The generated steering vector will span from -angEstRange to angEstRange with increments of ang_est_resolution
+The generated steering vector should be used for all further AOA estimations (bartlett/capon)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ang_est_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The desired span of thetas for the angle spectrum.</li>
+<li><strong>ang_est_resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The desired resolution in terms of theta</li>
+<li><strong>num_ant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of Vrx antenna signals captured in the RDC</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Number of vectors generated (integer divide angEstRange/ang_est_resolution)
+steering_vectors (ndarray): The generated 2D-array steering vector of size (num_vec,num_ant)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">num_vec (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1">#This will generate a numpy array containing the steering vector with</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#angular span from -90 to 90 in increments of 1 degree for a 4 Vrx platform</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span><span class="p">,</span> <span class="n">steering_vec</span> <span class="o">=</span> <span class="n">gen_steering_vec</span><span class="p">(</span><span class="mi">90</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.aoa_estimation_bf_one_point">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">aoa_estimation_bf_one_point</code><span class="sig-paren">(</span><em>num_ant</em>, <em>sig_in</em>, <em>steering_vec</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.aoa_estimation_bf_one_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total power of the given spectrum</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>num_ant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of virtual antennas (Vrx) being used</li>
+<li><strong>sig_in</strong> (<em>ndarray</em>) – A 2D-array of size (num_ant, numChirps) containing ADC sample data sliced for used Vrx</li>
+<li><strong>steering_vec</strong> (<em>ndarray</em>) – A 2D-array of size (numTheta, num_ant) generated from gen_steering_vec</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The total power of the given input spectrum</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">out_value (<a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.7)">complex</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.aoa_est_bf_single_peak_det">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">aoa_est_bf_single_peak_det</code><span class="sig-paren">(</span><em>sig_in</em>, <em>steering_vec</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.aoa_est_bf_single_peak_det" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Beamforming Estimate Angle of Arrival for single peak (single peak should be known a priori)</dt>
+<dd>Function call does not include variance calculations
+Function does not generate a spectrum. Rather, it only returns the array index (theta) to the highest peak</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sig_in</strong> (<em>ndarray</em>) – A 2D-array of size (num_ant, numChirps) containing ADC sample data sliced as described</li>
+<li><strong>steering_vec</strong> (<em>ndarray</em>) – A generated 2D-array steering vector of size (numVec,num_ant)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of the theta spectrum at a given range bin that contains the max peak</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">max_index (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.aoa_est_bf_single_peak">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">aoa_est_bf_single_peak</code><span class="sig-paren">(</span><em>num_ant</em>, <em>noise</em>, <em>est_resolution</em>, <em>sig_in</em>, <em>steering_vec_size</em>, <em>steering_vec</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.aoa_est_bf_single_peak" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Beamforming Estimate Angle of Arrival for single peak (single peak should be known a priori)</dt>
+<dd>Function call includes variance calculations
+Function does generate a spectrum.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>num_ant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of virtual receivers in the current radar setup</li>
+<li><strong>noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Input noise figure</li>
+<li><strong>est_resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Desired theta spectrum resolution used when generating steering_vec</li>
+<li><strong>sig_in</strong> (<em>ndarray</em>) – A 2D-array of size (num_ant, numChirps) containing ADC sample data sliced as described</li>
+<li><strong>steering_vec_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Length of the steering vector array</li>
+<li><strong>steering_vec</strong> (<em>ndarray</em>) – A generated 2D-array steering vector of size (numVec,num_ant)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The estimated variance of the doa_spectrum
+max_index (int): Index of the theta spectrum at a given range bin that contains the max peak
+doa_spectrum (ndarray): A 1D-Array of size (numTheta, 1) containing the theta spectrum at a given range bin</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">est_var (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.aoa_est_bf_multi_peak_det">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">aoa_est_bf_multi_peak_det</code><span class="sig-paren">(</span><em>gamma</em>, <em>sidelobe_level</em>, <em>sig_in</em>, <em>steering_vec</em>, <em>steering_vec_size</em>, <em>ang_est</em>, <em>search=False</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.aoa_est_bf_multi_peak_det" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use Bartlett beamforming to estimate AOA for multi peak situation (a priori), no variance calculation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Weight to determine when a peak will pass as a true peak</li>
+<li><strong>sidelobe_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – A low value threshold used to avoid sidelobe detections as peaks</li>
+<li><strong>sig_in</strong> (<em>ndarray</em>) – A 2D-array of size (num_ant, numChirps) containing ADC sample data sliced as described</li>
+<li><strong>steering_vec</strong> (<em>ndarray</em>) – A generated 2D-array steering vector of size (numVec,num_ant)</li>
+<li><strong>steering_vec_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Length of the steering vector array</li>
+<li><strong>ang_est</strong> (<em>ndarray</em>) – An empty 1D numpy array that gets populated with max indexes</li>
+<li><strong>search</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Flag that determines whether search is done to find max points</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The number of max points found across the theta bins at this particular range bin
+doa_spectrum (ndarray): A 1D-Array of size (numTheta, 1) containing the theta spectrum at a given range bin</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">num_max (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.aoa_est_bf_multi_peak">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">aoa_est_bf_multi_peak</code><span class="sig-paren">(</span><em>gamma</em>, <em>sidelobe_level</em>, <em>width_adjust_3d_b</em>, <em>input_snr</em>, <em>est_resolution</em>, <em>sig_in</em>, <em>steering_vec</em>, <em>steering_vec_size</em>, <em>peak_data</em>, <em>ang_est</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.aoa_est_bf_multi_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function performs all sections of the angle of arrival process in one function.</p>
+<ol class="arabic simple">
+<li>Performs bartlett beamforming</li>
+<li>Performs multi-peak search</li>
+<li>Calculates an estimated variance</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Weight to determine when a peak will pass as a true peak</li>
+<li><strong>sidelobe_level</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – A low value threshold used to avoid sidelobe detections as peaks</li>
+<li><strong>width_adjust_3d_b</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Constant to adjust gamma bandwidth to 3dB bandwidth</li>
+<li><strong>input_snr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Input data SNR value</li>
+<li><strong>est_resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – User defined target resolution</li>
+<li><strong>sig_in</strong> (<em>ndarray</em>) – A 2D-array of size (num_ant, numChirps) containing ADC sample data sliced as described</li>
+<li><strong>steering_vec</strong> (<em>ndarray</em>) – A generated 2D-array steering vector of size (numVec,num_ant)</li>
+<li><strong>steering_vec_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Length of the steering vector array</li>
+<li><strong>peak_data</strong> (<em>ndarray</em>) – A 2D ndarray with custom data-type that contains information on each detected point</li>
+<li><strong>ang_est</strong> (<em>ndarray</em>) – An empty 1D numpy array that gets populated with max indexes</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>Tuple [ndarray, ndarray]</dt>
+<dd><ol class="first last arabic simple">
+<li>num_max (int): The number of max values detected by search algorithm</li>
+<li>est_var (ndarray): The estimated variance of this range of thetas at this range bin</li>
+</ol>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.naive_xyz">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">naive_xyz</code><span class="sig-paren">(</span><em>virtual_ant</em>, <em>num_tx=3</em>, <em>num_rx=4</em>, <em>fft_size=64</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.naive_xyz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the phase introduced from the elevation of the elevation antennas</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>virtual_ant</strong> – Signal received by the rx antennas, shape = [#angleBins, #detectedObjs], zero-pad #virtualAnts to #angleBins</li>
+<li><strong>num_tx</strong> – Number of transmitter antennas used</li>
+<li><strong>num_rx</strong> – Number of receiver antennas used</li>
+<li><strong>fft_size</strong> – Size of the fft performed on the signals</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Estimated x axis coordinate in meters (m)
+y_vector (float): Estimated y axis coordinate in meters (m)
+z_vector (float): Estimated z axis coordinate in meters (m)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">x_vector (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mmwave.dsp.angle_estimation.beamforming_naive_mixed_xyz">
+<code class="descclassname">mmwave.dsp.angle_estimation.</code><code class="descname">beamforming_naive_mixed_xyz</code><span class="sig-paren">(</span><em>azimuth_input</em>, <em>input_ranges</em>, <em>range_resolution</em>, <em>method='Capon'</em>, <em>num_vrx=12</em>, <em>est_range=90</em>, <em>est_resolution=1</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dsp.angle_estimation.beamforming_naive_mixed_xyz" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function estimates the XYZ location of a series of input detections by performing beamforming on the
+azimuth axis and naive AOA on the vertical axis.</p>
+<p>TI xWR1843 virtual antenna map
+Row 1               8  9  10 11
+Row 2         0  1  2  3  4  5  6  7</p>
+<p>phi (ndarray):
+theta (ndarray):
+ranges (ndarray):
+xyz_vec (ndarray):</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>azimuth_input</strong> (<em>ndarray</em>) – Must be a numpy array of shape (numDetections, numVrx)</li>
+<li><strong>input_ranges</strong> (<em>ndarray</em>) – Numpy array containing the rangeBins that have detections (will determine x, y, z for</li>
+<li><strong>detection</strong><strong>)</strong> (<em>each</em>) – </li>
+<li><strong>range_resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The range_resolution in meters per rangeBin for rangeBin-&gt;meter conversion</li>
+<li><strong>method</strong> (<em>string</em>) – Determines which beamforming method to use for azimuth aoa estimation.</li>
+<li><strong>num_vrx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of virtual antennas in the radar platform. Default set to 12 for 1843</li>
+<li><strong>est_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The desired span of thetas for the angle spectrum. Used for gen_steering_vec</li>
+<li><strong>est_resolution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The desired angular resolution for gen_steering_vec</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><ol class="arabic simple">
+<li>A numpy array of shape (numDetections, ) where each element represents the elevation angle in degrees</li>
+<li>A numpy array of shape (numDetections, ) where each element represents the azimuth in degrees</li>
+<li>A numpy array of shape (numDetections, ) where each element represents the polar range in rangeBins</li>
+<li>A numpy array of shape (3, numDetections) and format: [x, y, z] where x, y, z are 1D arrays. x, y, z             should be in meters</li>
+</ol>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a> [ndarray, ndarray, ndarray, ndarray, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a>]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">mmwave</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../dataloader/index.html">mmwave.dataloader</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">mmwave.dsp</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mmwave.dsp.angle_estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cfar.html">mmwave.dsp.cfar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compensation.html">mmwave.dsp.compensation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doppler_processing.html">mmwave.dsp.doppler_processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise_removal.html">mmwave.dsp.noise_removal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="range_processing.html">mmwave.dsp.range_processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">mmwave.dsp.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zoom_fft.html">mmwave.dsp.ZoomFFT</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tracking/index.html">mmwave.tracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../clustering/index.html">mmwave.clustering</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">mmwave.dsp</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">mmwave.dsp</a></li>
+      <li>Next: <a href="cfar.html" title="next chapter">mmwave.dsp.cfar</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Arjun, Charles, Dash, Edwin, Jingning, Ruihao.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/dsp/angle_estimation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

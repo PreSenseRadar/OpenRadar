@@ -1,0 +1,202 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mmwave.dataloader.radars &#8212; mmwave 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mmwave.dsp" href="../dsp/index.html" />
+    <link rel="prev" title="mmwave.dataloader.utils" href="utils.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mmwave-dataloader-radars">
+<h1>mmwave.dataloader.radars<a class="headerlink" href="#mmwave-dataloader-radars" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="mmwave.dataloader.radars.TI">
+<em class="property">class </em><code class="descclassname">mmwave.dataloader.radars.</code><code class="descname">TI</code><span class="sig-paren">(</span><em>sdk_version=2.0</em>, <em>cli_loc='COM6'</em>, <em>cli_baud=115200</em>, <em>data_loc='COM5'</em>, <em>data_baud=921600</em>, <em>num_rx=4</em>, <em>num_tx=2</em>, <em>verbose=False</em>, <em>connect=True</em>, <em>mode=0</em><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dataloader.radars.TI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Software interface to a TI mmWave EVM for reading TLV format. Based on TI’s SDKs</p>
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.sdk_version">
+<code class="descname">sdk_version</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.sdk_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of the TI SDK the radar is using</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.cli_port">
+<code class="descname">cli_port</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.cli_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serial communication port of the configuration/user port</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.data_port">
+<code class="descname">data_port</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.data_port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serial communication port of the data port</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.num_rx_ant">
+<code class="descname">num_rx_ant</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.num_rx_ant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of RX (receive) antennas being utilized by the radar</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.num_tx_ant">
+<code class="descname">num_tx_ant</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.num_tx_ant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of TX (transmit) antennas being utilized by the radar</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.num_virtual_ant">
+<code class="descname">num_virtual_ant</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.num_virtual_ant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of VX (virtual) antennas being utilized by the radar</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.verbose">
+<code class="descname">verbose</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional output messages while parsing data</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.connected">
+<code class="descname">connected</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional attempt to connect to the radar during initialization</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mmwave.dataloader.radars.TI.mode">
+<code class="descname">mode</code><a class="headerlink" href="#mmwave.dataloader.radars.TI.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Demo mode to read different TLV formats</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mmwave.dataloader.radars.TI.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dataloader.radars.TI.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>End connection between radar and machine</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mmwave.dataloader.radars.TI.sample">
+<code class="descname">sample</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mmwave.dataloader.radars.TI.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples byte data from the radar and converts it to decimal</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">mmwave</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">mmwave.dataloader</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="adc.html">mmwave.dataloader.adc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">mmwave.dataloader.utils</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mmwave.dataloader.radars</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dsp/index.html">mmwave.dsp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tracking/index.html">mmwave.tracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../clustering/index.html">mmwave.clustering</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">mmwave.dataloader</a><ul>
+      <li>Previous: <a href="utils.html" title="previous chapter">mmwave.dataloader.utils</a></li>
+      <li>Next: <a href="../dsp/index.html" title="next chapter">mmwave.dsp</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Arjun, Charles, Dash, Edwin, Jingning, Ruihao.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/dataloader/radars.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
