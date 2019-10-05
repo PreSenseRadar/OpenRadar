@@ -1,0 +1,13 @@
+submodules:
+    include: all
+
+build:
+    image: latest
+
+python:
+    setup_py_install: true
+    install:
+        - requirements: requirements.txt
+        - method: pip
+        - path: .
+        - method: setuptools

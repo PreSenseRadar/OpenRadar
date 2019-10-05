@@ -20,13 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = 'mmwave'
-copyright = '2019, Arjun, Charles, Dash, Edwin, Jingning, Ruihao'
-author = 'Arjun, Charles, Dash, Edwin, Jingning, Ruihao'
+copyright = '2019, Arjun, Dash, Edwin, Jingning, Ruihao'
+author = 'Arjun, Dash, Edwin, Jingning, Ruihao'
 
 # The short X.Y version
-version = ''
+version = '0.9'
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.9.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -135,7 +135,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'mmwave.tex', 'mmwave Documentation',
-     'Arjun, Charles, Dash, Edwin, Jingning, Ruihao', 'manual'),
+     'Arjun, Dash, Edwin, Jingning, Ruihao', 'manual'),
 ]
 
 

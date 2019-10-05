@@ -11,7 +11,7 @@ The toolbox is modularized into separate steps
 4. Different demo implementations from TI and our own explorations.
 
 ## Documentation
-- [readthedocs](openradar.readthedocs.io)
+- [openradar.readthedocs.io](https://openradar.readthedocs.io)
 
 ## Contact 
 
@@ -44,6 +44,12 @@ The toolbox is modularized into separate steps
 
 
 ## Installation
+
+### Pip installation
+```
+Coming soon
+```
+
 ### Debug Mode
 ```
 git clone https://github.com/presenseradar/openradar
