@@ -126,14 +126,14 @@ if __name__ == '__main__':
         # (4) Object Detection
         # --- CFAR, SNR is calculated as well.
         fft2d_sum = det_matrix.astype(np.int64)
-        thresholdDoppler, noiseFloorDoppler = np.apply_along_axis(func1d=dsp.cell_average_wrap_threshold,
+        thresholdDoppler, noiseFloorDoppler = np.apply_along_axis(func1d=dsp.ca_,
                                                                   axis=0,
                                                                   arr=fft2d_sum.T,
                                                                   l_bound=1.5,
                                                                   guard_len=4,
                                                                   noise_len=16)
 
-        thresholdRange, noiseFloorRange = np.apply_along_axis(func1d=dsp.cell_average_wrap_threshold,
+        thresholdRange, noiseFloorRange = np.apply_along_axis(func1d=dsp.ca_,
                                                               axis=0,
                                                               arr=fft2d_sum,
                                                               l_bound=2.5,

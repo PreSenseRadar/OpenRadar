@@ -1,9 +1,9 @@
 mmwave.dsp.cfar
 ===============
 
-.. autofunction:: mmwave.dsp.cfar.cell_average_wrap
+.. autofunction:: mmwave.dsp.cfar.ca
 
-.. autofunction:: mmwave.dsp.cfar.cell_average_wrap_threshold
+.. autofunction:: mmwave.dsp.cfar.ca_
 
 .. autofunction:: mmwave.dsp.cfar.ca_so_go
 

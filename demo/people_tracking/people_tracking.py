@@ -76,7 +76,7 @@ for frame in all_data:
     heatmap_log = np.log2(range_azimuth)
     
     # --- cfar in azimuth direction
-    first_pass, _ = np.apply_along_axis(func1d=dsp.cell_average_wrap_threshold,
+    first_pass, _ = np.apply_along_axis(func1d=dsp.ca_,
                                         axis=0,
                                         arr=heatmap_log,
                                         l_bound=1.5,
@@ -84,7 +84,7 @@ for frame in all_data:
                                         noise_len=16)
     
     # --- cfar in range direction
-    second_pass, noise_floor = np.apply_along_axis(func1d=dsp.cell_average_wrap_threshold,
+    second_pass, noise_floor = np.apply_along_axis(func1d=dsp.ca_,
                                                    axis=0,
                                                    arr=heatmap_log.T,
                                                    l_bound=2.5,

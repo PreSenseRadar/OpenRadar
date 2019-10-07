@@ -33,34 +33,49 @@ CFAR_CASO = 2
 CFAR_CAGO = 3
 
 
-def cell_average_wrap(arr, *argv, **kwargs):
-    """Wrapper function around the cell_average_wrap_threshold. Created per TI's implementation.
-
-    Note:
-        May deprecate in the future.
+def ca(arr, *argv, **kwargs):
+    """Wrapper function around the cell average threshold.
 
     Args:
-        arr (list or ndarray): Noisy array to perform cfar on with log values
-        *argv: See cfar.cell_average_wrap_threshold
-        **kwargs: See cfar.cell_average_wrap_threshold
+        arr (list or ndarray): Noisy array.
+        *argv: See mmwave.dsp.cfar.ca\_
+        **kwargs: See mmwave.dsp.cfar.ca\_
 
     Returns:
-        (ndarray): Bit mask of detected peaks
+        ndarray: Bit mask of detected peaks
+
+    Example:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> det = mm.dsp.ca(signal, l_bound=20, guard_len=1, noise_len=3)
+        >>> det
+            array([False, False,  True, False, False, False, False,  True, False,
+                True])
+
+        FEATURE NOT YET ADDED - Perform a non-wrapping cfar.
+
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> det = mm.dsp.ca(signal, l_bound=20, guard_len=1, noise_len=3, wrap=False)
+        >>> det
+            array([False, False,  True, False, False, False, False,  True, False,
+                True])
 
     """
     if isinstance(arr, list):
         arr = np.array(arr)
-    threshold, _ = cell_average_wrap_threshold(arr, *argv, **kwargs)
+    threshold, _ = ca_(arr, *argv, **kwargs)
     ret = (arr > threshold)
     return ret
 
 
-def cell_average_wrap_threshold(arr, l_bound=4000, guard_len=4, noise_len=8):
+def ca_(arr, l_bound=4000, guard_len=4, noise_len=8):
     """Perform CFAR-CA detection on the input array.
 
     Args:
-        arr (list or ndarray): Noisy array to perform CFAR. The arr is expected bo be 1d list or array and with \
-                                log values.
+        arr (list or ndarray): Noisy array.
         l_bound (int): Additive lower bound of detection threshold.
         guard_len (int): Left and right side guard samples for leakage protection.
         noise_len (int): Left and right side noise samples after guard samples.
@@ -69,7 +84,24 @@ def cell_average_wrap_threshold(arr, l_bound=4000, guard_len=4, noise_len=8):
         threshold (ndarray): CFAR generated threshold based on inputs (Peak detected if arr[i] > threshold[i]) \
                                 for designated false-positive rate
         noise_floor (ndarray): noise values with the same shape as input arr.
-        
+
+    Example:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> threshold = mm.dsp.ca_(signal, l_bound=20, guard_len=1, noise_len=3)
+        >>> threshold
+            (array([70, 76, 64, 79, 81, 91, 74, 71, 70, 79]), array([50, 56, 44, 59, 61, 71, 54, 51, 50, 59]))
+
+        FEATURE NOT YET ADDED - Perform a non-wrapping cfar thresholding.
+
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> threshold = mm.dsp.ca_(signal, l_bound=20, guard_len=1, noise_len=3, wrap=False)
+        >>> threshold
+            (array([70, 76, 64, 79, 81, 91, 74, 71, 70, 79]), array([50, 56, 44, 59, 61, 71, 54, 51, 50, 59]))
+
     """
     if isinstance(arr, list):
         arr = np.array(arr)
@@ -88,7 +120,7 @@ def ca_so_go(arr, *argv, **kwargs):
     """Performs non-wrapping cfar detection on the input array with adjustable methods.
 
     Note:
-        May be separated into multiple functions at a later time
+        Will be separated into multiple functions at a later time
 
     Args:
         arr (list or ndarray:
@@ -118,10 +150,10 @@ def ca_so_go_threshold(arr, r_shift=4, l_bound=5600,
         guard_len (int): Left and right side guard samples for leakage protection
         noise_len (int): Left and right side noise samples after guard samples
         cfar_type (int): Algorithm variant to create adaptive threshold
-        
+
     Returns:
         threshold (np.ndarray): CFAR generated threshold based on inputs (Peak detected if arr[i] > threshold[i])
-        
+
     """
     if isinstance(arr, list):
         arr = np.array(arr)
@@ -216,15 +248,15 @@ def ordered_statistics_wrap(arr, *argv, **kwargs):
 
 def ordered_statistics_wrap_threshold(arr, k=12, prob_fa=None, noise_len=8, scale=1.1):
     """Performs non-wrapping cfar detection on the input array with adjustable methods
-            
+
     Args:
         arr (list or ndarray): Noisy array to perform cfar on with log values
         k (int): Ordered statistic rank to sample from
         prob_fa (float): Probability of false alarm, used to calculate scale
         noise_len (int): Left and right side noise samples after guard samples
         scale (int): Scaling factor, if not None prob_fa parameter is ignored
-    
-    Returns: 
+
+    Returns:
         threshold (ndarray): Bit mask of size len(arr) with detected objects from arr
 
     TODO: prob_fa is buggy
@@ -278,16 +310,16 @@ def peak_grouping(obj_raw,
                   group_in_doppler_direction,
                   group_in_range_direction):
     """Performs peak grouping on detection Range/Doppler matrix.
-     
-    The function groups neighboring peaks into one. The grouping is done according to two input flags: 
+
+    The function groups neighboring peaks into one. The grouping is done according to two input flags:
     group_in_doppler_direction and group_in_doppler_direction. For each detected peak the function checks if the peak is
-    greater than its neighbors. If this is true, the peak is copied to the output list of detected objects. The 
+    greater than its neighbors. If this is true, the peak is copied to the output list of detected objects. The
     neighboring peaks that are used for checking are taken from the detection matrix and copied into 3x3 kernel
-    regardless of whether they are CFAR detected or not. Note: Function always reads 9 samples per detected object 
+    regardless of whether they are CFAR detected or not. Note: Function always reads 9 samples per detected object
     from L3 memory into local array tempBuff, but it only needs to read according to input flags. For example if only
     the group_in_doppler_direction flag is set, it only needs to read middle row of the kernel, i.e. 3 samples per
     target from detection matrix.
-    
+
     Args:
         obj_raw (np.ndarray): (num_detected_objects, 3). detected objects from CFAR.
         det_matrix (np.ndarray): Range-doppler profile. shape is numRangeBins x num_doppler_bins.
@@ -296,10 +328,10 @@ def peak_grouping(obj_raw,
         min_range_idx (int): min range of detected objects
         group_in_doppler_direction (int): flag to perform grouping along doppler direction.
         group_in_range_direction (int): flag to perform grouping along range direction.
-        
+
     Returns:
         obj_out (np.ndarray):  detected object after grouping.
-        
+
     """
 
     num_detected_objects = obj_raw.shape[0]
@@ -399,15 +431,15 @@ def peak_grouping_qualified(obj_raw,
                             group_in_doppler_direction,
                             group_in_range_direction):
     """Performs peak grouping on list of CFAR detected objects.
-     
-    The function groups neighboring peaks into one. The grouping is done according to two input flags: 
+
+    The function groups neighboring peaks into one. The grouping is done according to two input flags:
     group_in_doppler_direction and group_in_doppler_direction. For each detected peak the function checks if the peak is
-    greater than its neighbors. If this is true, the peak is copied to the output list of detected objects. The 
-    neighboring peaks that are used for checking are taken from the list of CFAR detected objects, (not from the 
-    detection matrix), and copied into 3x3 kernel that has been initialized to zero for each peak under test. If the 
-    neighboring cell has not been detected by CFAR, its peak value is not copied into the kernel. Note: Function always 
+    greater than its neighbors. If this is true, the peak is copied to the output list of detected objects. The
+    neighboring peaks that are used for checking are taken from the list of CFAR detected objects, (not from the
+    detection matrix), and copied into 3x3 kernel that has been initialized to zero for each peak under test. If the
+    neighboring cell has not been detected by CFAR, its peak value is not copied into the kernel. Note: Function always
     search for 8 peaks in the list, but it only needs to search according to input flags.
-    
+
     Args:
         obj_raw (np.ndarray): (num_detected_objects, 3). detected objects from CFAR.
         num_doppler_bins (int): number of doppler bins.
@@ -415,10 +447,10 @@ def peak_grouping_qualified(obj_raw,
         min_range_idx (int): min range of detected objects
         group_in_doppler_direction (int): flag to perform grouping along doppler direction.
         group_in_range_direction (int): flag to perform grouping along range direction.
-        
+
     Returns:
         obj_out (np.ndarray):  detected object after grouping.
-        
+
     """
 
     num_detected_objects = obj_raw.shape[0]
