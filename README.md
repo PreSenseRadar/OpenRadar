@@ -74,3 +74,6 @@ dca = DCA1000()
 adc_data = dca.read()
 radar_cube = mm.dsp.range_processing(adc_data)
 ```
+
+## Acknowledgement
+The PreSense team wants to thank Prof. [Sanjay Patel](https://ece.illinois.edu/directory/profile/sjp), without whom this project wouldn't be possible. We are also grateful for the generous sponsorship from The IBM-ILLINOIS Center for Cognitive Computing Systems Research ([C3SR](https://www.c3sr.com/)) and the guidance/leadership from [Jinjun Xiong](https://researcher.watson.ibm.com/researcher/view.php?person=us-jinjun) of IBM and Prof. [Wen-Mei Hwu](https://ece.illinois.edu/directory/profile/w-hwu). Special thanks to Prof. [Haitham Hassanieh](http://haitham.ece.illinois.edu/) and Prof. [Minh M. Do](http://minhdo.ece.illinois.edu/) for the techical advice and Texas Instruments&trade; for the hardware support.
