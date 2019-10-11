@@ -207,12 +207,13 @@ if __name__ == '__main__':
 
                 # radar_dbscan(epsilon, vfactor, weight, numPoints)
         #        cluster = radar_dbscan(detObj2D_f, 1.7, 3.0, 1.69 * 1.7, 3, useElevation=True)
-        cluster = clu.radar_dbscan(detObj2D_f, 0, doppler_resolution, use_elevation=True)
+        if len(detObj2D_f) > 0:
+            cluster = clu.radar_dbscan(detObj2D_f, 0, doppler_resolution, use_elevation=True)
 
-        cluster_np = np.array(cluster['size']).flatten()
-        if cluster_np.size != 0:
-            if max(cluster_np) > max_size:
-                max_size = max(cluster_np)
+            cluster_np = np.array(cluster['size']).flatten()
+            if cluster_np.size != 0:
+                if max(cluster_np) > max_size:
+                    max_size = max(cluster_np)
 
         # (6) Visualization
         if plot2DscatterXY or plot2DscatterXZ:

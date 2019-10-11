@@ -198,7 +198,7 @@ def aoa_bartlett(steering_vec, sig_in, axis):
     return doa_spectrum.swapaxes(axis, np.arange(len(sig_in.shape))[-2])
 
 
-def aoa_capon(steering_vec, rx_chirp_slice):
+def aoa_capon(x, steering_vector, magnitude=False):
     """Perform AOA estimation using Capon (MVDR) Beamforming on a rx by chirp slice
 
     Calculate the aoa spectrum via capon beamforming method using one full frame as input.
@@ -212,8 +212,12 @@ def aoa_capon(steering_vec, rx_chirp_slice):
         w_{ca} (\\theta) = \\frac{R_{xx}^{-1} a(\\theta)}{a^{H}(\\theta) R_{xx}^{-1} a(\\theta)}
 
     Args:
-        steering_vec (ndarray): A 2D-array of size (numTheta, num_ant) generated from gen_steering_vec
-        rx_chirp_slice (ndarray): Output of the 1d range fft with shape (num_ant, numChirps)
+        x (ndarray): Output of the 1d range fft with shape (num_ant, numChirps)
+        steering_vector (ndarray): A 2D-array of size (numTheta, num_ant) generated from gen_steering_vec
+        magnitude (bool): Azimuth theta bins should return complex data (False) or magnitude data (True). Default=False
+
+    Raises:
+        ValueError: steering_vector and or x are not the correct shape
 
     Returns:
         A list containing numVec and steeringVectors
@@ -225,19 +229,26 @@ def aoa_capon(steering_vec, rx_chirp_slice):
         >>> Frame = 0
         >>> dataIn = np.random.rand((num_frames, num_chirps, num_vrx, num_adc_samples))
         >>> for i in range(256):
-        >>>     scan_aoa_capon[i,:], _ = np.abs(dss.aoa_capon(steering_vec,dataIn[Frame,:,:,i].T))
+        >>>     scan_aoa_capon[i,:], _ = dss.aoa_capon(dataIn[Frame,:,:,i].T, steering_vector, magnitude=True)
 
     """
 
-    Rxx = cov_matrix(rx_chirp_slice)
+    if steering_vector.shape[1] != x.shape[0]:
+        raise ValueError("'steering_vector' with shape (%d,%d) cannot matrix multiply 'input_data' with shape (%d,%d)" \
+        % (steering_vector.shape[0], steering_vector.shape[1], x.shape[0], x.shape[1]))
+
+    Rxx = cov_matrix(x)
     Rxx = forward_backward_avg(Rxx)
     Rxx_inv = np.linalg.inv(Rxx)
     # Calculate Covariance Matrix Rxx
-    first = Rxx_inv @ steering_vec.T
-    den = np.reciprocal(np.einsum('ij,ij->i', steering_vec.conj(), first.T))
+    first = Rxx_inv @ steering_vector.T
+    den = np.reciprocal(np.einsum('ij,ij->i', steering_vector.conj(), first.T))
     weights = np.matmul(first, den)
 
-    return den, weights
+    if magnitude:
+        return np.abs(den), weights
+    else:
+        return den, weights
 
 
 # ------------------------------- HELPER FUNCTIONS -------------------------------
@@ -888,6 +899,10 @@ def beamforming_naive_mixed_xyz(azimuth_input, input_ranges, range_resolution, m
         est_range (int): The desired span of thetas for the angle spectrum. Used for gen_steering_vec
         est_resolution (float): The desired angular resolution for gen_steering_vec
 
+    Raises:
+        ValueError: If method is not one of two AOA implementations ('Capon', 'Bartlett')
+        ValueError: azimuthInput's second axis should have same shape as the number of Vrx
+
     Returns:
         tuple [ndarray, ndarray, ndarray, ndarray, list]:
             1. A numpy array of shape (numDetections, ) where each element represents the elevation angle in degrees
@@ -897,8 +912,11 @@ def beamforming_naive_mixed_xyz(azimuth_input, input_ranges, range_resolution, m
             should be in meters
 
     """
-    assert method == 'Capon' or method == 'Bartlett', "Choose either 'Capon' or 'Bartlett' for Azimuth beamforming AOA"
-    assert azimuth_input.shape[1] == num_vrx, "azimuthInput is the wrong shape. Change num_vrx if not using TI 1843 platform"
+    if method not in ('Capon', 'Bartlett'):
+        raise ValueError("Method argument must be 'Capon' or 'Bartlett'")
+
+    if azimuth_input.shape[1] != num_vrx:
+        raise ValueError("azimuthInput is the wrong shape. Change num_vrx if not using TI 1843 platform")
 
     doa_var_thr = 10
     num_vec, steering_vec = gen_steering_vec(est_range, est_resolution, 8)

@@ -276,19 +276,26 @@ def dc_range_signature_removal(fft_out1_d,
         fft_out1_d[1::2, :, positive_bin_idx + 1:] -= calib_dc_range_sig_cfg.mean[1, positive_bin_idx + 1:]
 
 
-def clutter_removal(input_val, axis=2):
-    """Perform clutter removal by removing the mean from the input_val on the specified axis.
+def clutter_removal(input_val, axis=0):
+    """Perform basic static clutter removal by removing the mean from the input_val on the specified doppler axis.
 
     Args:
-        input_val (ndarray): Array to be clutter removed. Usually the input of 2D FFT,\
-        e.g. [numChirpsPerFrame, num_rx_antennas, numRangeBins]. so it is applied along the last axis.
-        axis (int): Axis to calculate mean
+        input_val (ndarray): Array to perform static clutter removal on. Usually applied before performing doppler FFT.
+            e.g. [num_chirps, num_vx_antennas, num_samples], it is applied along the first axis.
+        axis (int): Axis to calculate mean of pre-doppler.
 
     Returns:
-        ndarray: Array with static clutter removed
+        ndarray: Array with static clutter removed.
 
     """
-    mean = input_val.mean(axis)
+    # Reorder the axes
+    reordering = np.arange(len(input_val.shape))
+    reordering[0] = axis
+    reordering[axis] = 0
+    input_val = input_val.transpose(reordering)
+
+    # Apply static clutter removal
+    mean = input_val.transpose(reordering).mean(0)
     output_val = input_val - mean
 
-    return output_val
+    return output_val.transpose(reordering)
