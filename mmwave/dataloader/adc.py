@@ -77,6 +77,12 @@ class DCA1000:
         3. Make sure to connect mmWaveStudio to the board via ethernet
         4. Start streaming data
         5. Read in frames using class
+
+    Examples:
+        >>> dca = DCA1000()
+        >>> adc_data = dca.read(timeout=.1)
+        >>> frame = dca.organize(adc_data, 128, 4, 256)
+
     """
 
     def __init__(self, static_ip='192.168.33.30', adc_ip='192.168.33.180',
