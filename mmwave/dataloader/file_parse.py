@@ -13,20 +13,72 @@
 import numpy as np
 import struct
 
-MAX_PACKET_SIZE = 4096
-BYTES_IN_PACKET = 1456
 
+def parse_raw_adc(source_fp, dest_fp):
+    """Reads a binary data file containing raw adc data from a DCA1000, cleans it and saves it for manual processing.
 
-def parse_raw_adc(fp):
-    buff = np.fromfile(fp, dtype=np.uint8)
-    all_data = []
-    packets = []
-    for num_bytes in range(0, len(buff), BYTES_IN_PACKET):
-        data = buff[num_bytes:num_bytes + BYTES_IN_PACKET]
-        packet_num = struct.unpack('<1l', data[:4])[0]
-        packets.append(packet_num)
-        # byte_count = struct.unpack('>Q', b'\x00\x00' + data[4:10][::-1])[0]
-        packet_data = np.frombuffer(data[10:], dtype=np.uint16)
-        all_data.append(packet_data)
+    Note:
+        "Raw adc data" in this context refers to the fact that the DCA1000 initially sends packets of data containing
+        meta data and is merged with actual pure adc data. Part of the purpose of this function is to remove this
+        meta data.
 
-    return all_data, packets
+    Note:
+        TODO: Support zero fill missing packets
+        TODO: Support reordering packets
+
+    Args:
+        source_fp (str): Path to raw binary adc data.
+        dest_fp (str): Path to output cleaned binary adc data.
+
+    Returns:
+        None
+
+    """
+    buff = np.fromfile(source_fp, dtype=np.uint8)
+    packets_recv = 0
+    buff_pos = 0
+    adc_data = []
+    while buff_pos < len(buff):
+        packets_recv += 1
+
+        # Index binary data
+        sequence_info = buff[buff_pos:buff_pos + 4]
+        length_info = buff[buff_pos + 4:buff_pos + 8]
+        # bytes_info = buff[buff_pos + 8:buff_pos + 14]
+        buff_pos += 14
+
+        # Unpack binary data
+        packet_num = struct.unpack('<1l', sequence_info)[0]
+        packet_length = struct.unpack('<l', length_info.tobytes())[0]
+        # curr_bytes_read = struct.unpack('<Q', np.pad(bytes_info, (0, 2), mode='constant').tobytes())[0]
+
+        # Build data
+        if packets_recv == packet_num:
+            adc_data.append(buff[buff_pos:buff_pos + packet_length])
+            buff_pos += packet_length
+
+        else:  # TODO: HANDLE PACKET REORDERING
+            raise ValueError(f'Got packet number {packet_num} but expected {packets_recv}.'
+                             f'Current function version does not support out-of-order packet data.')
+
+    adc_data = np.concatenate(adc_data)
+
+    # Write data to destination
+    fp = open(dest_fp, 'wb')
+
+    if adc_data.itemsize == 0:
+        buffer_size = 0
+    else:
+        # Set buffer size to 16 MiB to hide the Python loop overhead.
+        buffer_size = max(16 * 1024 ** 2 // adc_data.itemsize, 1)
+
+    if adc_data.flags.f_contiguous and not adc_data.flags.c_contiguous:
+        for chunk in np.nditer(
+                adc_data, flags=['external_loop', 'buffered', 'zerosize_ok'],
+                buffersize=buffer_size, order='F'):
+            fp.write(chunk.tobytes('C'))
+    else:
+        for chunk in np.nditer(
+                adc_data, flags=['external_loop', 'buffered', 'zerosize_ok'],
+                buffersize=buffer_size, order='C'):
+            fp.write(chunk.tobytes('C'))
