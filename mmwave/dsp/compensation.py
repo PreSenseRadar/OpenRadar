@@ -37,11 +37,10 @@ def _generate_dft_sin_cos_table(dft_length):
 
     return dft_sin_cos_table, bins
 
-def add_doppler_compensation(num_doppler_bins,
-                             doppler_indices,
-                             azimuth_in,
-                             num_virtual_antennas,
-                             num_tx_antennas):
+def add_doppler_compensation(input_data,
+                             num_tx_antennas,
+                             doppler_indices=None,
+                             num_doppler_bins=None):
     """Compensation of Doppler phase shift in the virtual antennas.
 
     Compensation of Doppler phase shift on the virtual antennas (corresponding to second or third Tx antenna chirps). 
@@ -54,55 +53,60 @@ def add_doppler_compensation(num_doppler_bins,
     azimuth_in matrix (numDetObj, num_angle_bins)
 
     Args:
-        num_doppler_bins (int): Number of doppler bins in the radar data cube.
-        doppler_indices (ndarray): Signed doppler index of the object with the shape of (num_detected_objects).
-        azimuth_in (ndarray): (num_detected_objects, num_rxs) Input of azimuth FFT. Only the virtual antennas will 
-            be compensated.
-        num_virtual_antennas (int): Number of virtual-only antenna symbols to be Doppler compensated. Should be the 
-            number of virtual antennas related to tx2 and tx3.
+        input_data (ndarray): (range, num_antennas, doppler) Radar data cube that needs to be compensated. It can be the input
+            of azimuth FFT after CFAR or the intermediate right before beamforming.
         num_tx_antennas (int): Number of transmitters.
+        num_doppler_bins (int): (Optional) Number of doppler bins in the radar data cube. If given, that means the doppler
+            indices are signed and needs to be converted to unsigned.
+        doppler_indices (ndarray): (Optional) Doppler index of the object with the shape of (num_detected_objects). If given, 
+            that means we only compensate on selected doppler bins.
     
     Return:
-        azimuth_in (ndarray): Input of azimuth FFT with the columns related to virtual receivers got compensated.
+        input_data (ndarray): Original input data with the columns related to virtual receivers got compensated.
         
     Example:
-        >>> # In this example, dataIn is the input data organized as numFrames by RDC
-        >>> frame = 0
-        >>> dataIn = np.random.rand((num_frames, num_chirps, num_vrx, num_adc_samples))
-        >>> aoa_bartlett(steering_vec,dataIn[frame],axis=1)
+        >>> # If the compensation is done right before naive azimuth FFT and objects is detected already. you need to 
+        >>> # feed in the doppler_indices
+        >>> dataIn = add_doppler_compensation(dataIn, 3, doppler_indices, 128)
   """
-    if num_virtual_antennas >= azimuth_in.shape[1]:
-        raise ValueError("Number of virtual-only receivers should be less than number of all receivers")
+    num_antennas = input_data.shape[1]
+    if num_tx_antennas == 1:
+        return input_data
+    elif num_tx_antennas > 3:
+        raise ValueError("the specified number of transimitters is currently not supported")
 
     # Call the gen function above to generate the tables.
     azimuth_mod_coefs, bins = _generate_dft_sin_cos_table(int(num_doppler_bins))
     
     # Convert signed doppler indices to unsigned and divide Doppler index by 2.
-    doppler_compensation_indices = doppler_indices & (num_doppler_bins - 1)
-    doppler_compensation_indices[doppler_compensation_indices[:] >= (num_doppler_bins / 2)] -= num_doppler_bins
-    doppler_compensation_indices = doppler_compensation_indices // 2
-    doppler_compensation_indices[doppler_compensation_indices[:] < 0] += num_doppler_bins
-    exp_doppler_compensation = azimuth_mod_coefs[doppler_compensation_indices]
+    if doppler_indices is not None:
+        if num_doppler_bins is not None:
+            doppler_compensation_indices = doppler_indices & (num_doppler_bins - 1)
+            doppler_compensation_indices[doppler_compensation_indices[:] >= (num_doppler_bins / 2)] -= num_doppler_bins
+            doppler_compensation_indices = doppler_compensation_indices // 2
+            doppler_compensation_indices[doppler_compensation_indices[:] < 0] += num_doppler_bins
+        exp_doppler_compensation = azimuth_mod_coefs[doppler_compensation_indices]
+    else:
+        exp_doppler_compensation = azimuth_mod_coefs
 
     # Add half bin rotation if Doppler index was odd
     if num_tx_antennas == 2:
         exp_doppler_compensation[(doppler_indices[:] % 2) == 1] *= bins[0]
-    elif num_tx_antennas == 3:
+    else:
         exp_doppler_compensation[(doppler_indices[:] % 3) == 1] *= bins[1]
         exp_doppler_compensation[(doppler_indices[:] % 3) == 2] *= bins[2]
-    else:
-        raise ValueError("the specified number of transimitters is currently not supported")
 
     # Expand the dim so that the broadcasting below will work.
     exp_doppler_compensation = np.expand_dims(exp_doppler_compensation, axis=1)
 
     # Rotate
-    azimuth_values = azimuth_in[:, :num_virtual_antennas]  # azimuth_values: (numDetObjs, 4)
-    Re = exp_doppler_compensation.real * azimuth_values.imag - exp_doppler_compensation.imag * azimuth_values.real
-    Im = exp_doppler_compensation.imag * azimuth_values.imag + exp_doppler_compensation.real * azimuth_values.real
-    azimuth_in[:, :num_virtual_antennas] = Re + 1j * Im
+    azimuth_values = input_data[:, (num_antennas/num_tx_antennas):, :]
+    for azi_val in azimuth_values:
+        Re = exp_doppler_compensation.real * azi_val.imag - exp_doppler_compensation.imag * azi_val.real
+        Im = exp_doppler_compensation.imag * azi_val.imag + exp_doppler_compensation.real * azi_val.real
+        input_data[:, (num_antennas/num_tx_antennas):, :] = Re + 1j * Im
 
-    return azimuth_in
+    return input_data
 
 
 def rx_channel_phase_bias_compensation(rx_channel_compensations, input, num_antennas):
