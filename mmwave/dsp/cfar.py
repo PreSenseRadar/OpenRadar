@@ -12,7 +12,6 @@
 
 import numpy as np
 from scipy.ndimage import convolve1d
-from .utils import *
 
 """ Various cfar algorithm types
 
@@ -28,64 +27,61 @@ From https://www.mathworks.com/help/phased/ug/constant-false-alarm-rate-cfar-det
 
 """
 
-CFAR_CA = 1
-CFAR_CASO = 2
-CFAR_CAGO = 3
 
-
-def ca(arr, *argv, **kwargs):
-    """Wrapper function around the cell average threshold.
+def ca(x, *argv, **kwargs):
+    """Detects peaks in signal using CA-CFAR.
 
     Args:
-        arr (list or ndarray): Noisy array.
+        x (~numpy.ndarray): Signal.
         *argv: See mmwave.dsp.cfar.ca\_
         **kwargs: See mmwave.dsp.cfar.ca\_
 
     Returns:
-        ndarray: Bit mask of detected peaks
+        ~numpy.ndarray: Boolean array of detected peaks in x.
 
-    Example:
+    Examples:
         >>> signal = np.random.randint(100, size=10)
         >>> signal
             array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
         >>> det = mm.dsp.ca(signal, l_bound=20, guard_len=1, noise_len=3)
         >>> det
             array([False, False,  True, False, False, False, False,  True, False,
-                True])
+                    True])
 
-        FEATURE NOT YET ADDED - Perform a non-wrapping cfar.
+        Perform a non-wrapping CFAR
 
         >>> signal = np.random.randint(100, size=10)
         >>> signal
             array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
-        >>> det = mm.dsp.ca(signal, l_bound=20, guard_len=1, noise_len=3, wrap=False)
+        >>> det =  mm.dsp.ca(signal, l_bound=20, guard_len=1, noise_len=3, mode='constant')
         >>> det
-            array([False, False,  True, False, False, False, False,  True, False,
-                True])
+            array([False,  True,  True, False, False, False, False,  True,  True,
+                    True])
 
     """
-    if isinstance(arr, list):
-        arr = np.array(arr)
-    threshold, _ = ca_(arr, *argv, **kwargs)
-    ret = (arr > threshold)
+    if isinstance(x, list):
+        x = np.array(x)
+    threshold, _ = ca_(x, *argv, **kwargs)
+    ret = (x > threshold)
     return ret
 
 
-def ca_(arr, l_bound=4000, guard_len=4, noise_len=8):
-    """Perform CFAR-CA detection on the input array.
+def ca_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
+    """Uses CA-CFAR to calculate a threshold that can be used to calculate peaks in a signal.
 
     Args:
-        arr (list or ndarray): Noisy array.
-        l_bound (int): Additive lower bound of detection threshold.
-        guard_len (int): Left and right side guard samples for leakage protection.
-        noise_len (int): Left and right side noise samples after guard samples.
+        x (~numpy.ndarray): Signal.
+        guard_len (int): Number of samples adjacent to the CUT that are ignored.
+        noise_len (int): Number of samples adjacent to the guard padding that are factored into the calculation.
+        mode (str): Specify how to deal with edge cells. Examples include 'wrap' and 'constant'.
+        l_bound (float or int): Additive lower bound while calculating peak threshold.
 
     Returns:
-        threshold (ndarray): CFAR generated threshold based on inputs (Peak detected if arr[i] > threshold[i]) \
-                                for designated false-positive rate
-        noise_floor (ndarray): noise values with the same shape as input arr.
+        Tuple [ndarray, ndarray]
+            1. (ndarray): Upper bound of noise threshold.
+            #. (ndarray): Raw noise strength.
 
-    Example:
+    Examples:
         >>> signal = np.random.randint(100, size=10)
         >>> signal
             array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
@@ -93,207 +89,312 @@ def ca_(arr, l_bound=4000, guard_len=4, noise_len=8):
         >>> threshold
             (array([70, 76, 64, 79, 81, 91, 74, 71, 70, 79]), array([50, 56, 44, 59, 61, 71, 54, 51, 50, 59]))
 
-        FEATURE NOT YET ADDED - Perform a non-wrapping cfar thresholding.
+        Perform a non-wrapping CFAR thresholding
 
         >>> signal = np.random.randint(100, size=10)
         >>> signal
             array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
-        >>> threshold = mm.dsp.ca_(signal, l_bound=20, guard_len=1, noise_len=3, wrap=False)
+        >>> threshold = mm.dsp.ca_(signal, l_bound=20, guard_len=1, noise_len=3, mode='constant')
         >>> threshold
-            (array([70, 76, 64, 79, 81, 91, 74, 71, 70, 79]), array([50, 56, 44, 59, 61, 71, 54, 51, 50, 59]))
+            (array([44, 37, 41, 65, 81, 91, 67, 51, 34, 46]), array([24, 17, 21, 45, 61, 71, 47, 31, 14, 26]))
 
     """
-    if isinstance(arr, list):
-        arr = np.array(arr)
-    assert type(arr) == np.ndarray
+    if isinstance(x, list):
+        x = np.array(x)
+    assert type(x) == np.ndarray
 
-    kernel = np.ones(1 + (2 * guard_len) + (2 * noise_len), dtype=arr.dtype) / (2 * noise_len)
+    kernel = np.ones(1 + (2 * guard_len) + (2 * noise_len), dtype=x.dtype) / (2 * noise_len)
     kernel[noise_len:noise_len + (2 * guard_len) + 1] = 0
 
-    noise_floor = convolve1d(arr, kernel, mode='wrap')
+    noise_floor = convolve1d(x, kernel, mode=mode)
     threshold = noise_floor + l_bound
 
     return threshold, noise_floor
 
 
-def ca_so_go(arr, *argv, **kwargs):
-    """Performs non-wrapping cfar detection on the input array with adjustable methods.
-
-    Note:
-        Will be separated into multiple functions at a later time
+def caso(x, *argv, **kwargs):
+    """Detects peaks in signal using CASO-CFAR.
 
     Args:
-        arr (list or ndarray:
-        *argv: See cfar.ca_so_go_threshold
-        **kwargs: See cfar.ca_so_go_threshold
+        x (~numpy.ndarray): Signal.
+        *argv: See mmwave.dsp.cfar.caso\_
+        **kwargs: See mmwave.dsp.cfar.caso\_
 
     Returns:
-        ret (ndarray): Bit mask of size len(arr) with detected objects from arr
+        ~numpy.ndarray: Boolean array of detected peaks in x.
+
+    Examples:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> det = mm.dsp.caso(signal, l_bound=20, guard_len=1, noise_len=3)
+        >>> det
+            array([False, False,  True, False, False, False, False,  True,  True,
+                    True])
+
+        Perform a non-wrapping CFAR
+
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> det =  mm.dsp.caso(signal, l_bound=20, guard_len=1, noise_len=3, mode='constant')
+        >>> det
+            array([False,  True,  True, False, False, False, False,  True,  True,
+                    True])
+
+    """
+    if isinstance(x, list):
+        x = np.array(x)
+    threshold, _ = caso_(x, *argv, **kwargs)
+    ret = (x > threshold)
+    return ret
+
+
+def caso_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
+    """Uses CASO-CFAR to calculate a threshold that can be used to calculate peaks in a signal.
+
+    Args:
+        x (~numpy.ndarray): Signal.
+        guard_len (int): Number of samples adjacent to the CUT that are ignored.
+        noise_len (int): Number of samples adjacent to the guard padding that are factored into the calculation.
+        mode (str): Specify how to deal with edge cells.
+        l_bound (float or int): Additive lower bound while calculating peak threshold.
+
+    Returns:
+        Tuple [ndarray, ndarray]
+            1. (ndarray): Upper bound of noise threshold.
+            #. (ndarray): Raw noise strength.
+
+    Examples:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> threshold = mm.dsp.caso_(signal, l_bound=20, guard_len=1, noise_len=3)
+        >>> (threshold[0].astype(int), threshold[1].astype(int))
+            (array([69, 55, 49, 72, 72, 86, 69, 55, 49, 72]), array([49, 35, 29, 52, 52, 66, 49, 35, 29, 52]))
+
+        Perform a non-wrapping CFAR thresholding
+
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> threshold = mm.dsp.caso_(signal, l_bound=20, guard_len=1, noise_len=3, mode='constant')
+        >>> (threshold[0].astype(int), threshold[1].astype(int))
+            (array([69, 55, 49, 72, 72, 86, 69, 55, 49, 72]), array([49, 35, 29, 52, 52, 66, 49, 35, 29, 52]))
+
+    """
+    if isinstance(x, list):
+        x = np.array(x)
+
+    l_window, r_window = _cfar_windows(x, guard_len, noise_len, mode)
+
+    # Generate scaling based on mode
+    l_window = l_window / noise_len
+    r_window = r_window / noise_len
+    if mode == 'wrap':
+        noise_floor = np.minimum(l_window, r_window)
+    elif mode == 'constant':
+        edge_cells = guard_len + noise_len
+        noise_floor = np.minimum(l_window, r_window)
+        noise_floor[:edge_cells] = r_window[:edge_cells]
+        noise_floor[-edge_cells:] = l_window[-edge_cells:]
+    else:
+        raise ValueError(f'Mode {mode} is not a supported mode')
+
+    threshold = noise_floor + l_bound
+    return threshold, noise_floor
+
+
+def cago(x, *argv, **kwargs):
+    """Detects peaks in signal using CAGO-CFAR.
+
+    Args:
+        x (~numpy.ndarray): Signal.
+        *argv: See mmwave.dsp.cfar.cago\_
+        **kwargs: See mmwave.dsp.cfar.cago\_
+
+    Returns:
+        ~numpy.ndarray: Boolean array of detected peaks in x.
+
+    Examples:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> det = mm.dsp.cago(signal, l_bound=20, guard_len=1, noise_len=3)
+        >>> det
+            array([False, False,  True, False, False, False, False,  True, False,
+                    False])
+
+        Perform a non-wrapping CFAR
+
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> det = mm.dsp.cago(signal, l_bound=20, guard_len=1, noise_len=3, mode='constant')
+        >>> det
+            array([False,  True,  True, False, False, False, False,  True,  True,
+                    True])
+
+    """
+    if isinstance(x, list):
+        x = np.array(x)
+    threshold, _ = cago_(x, *argv, **kwargs)
+    ret = (x > threshold)
+    return ret
+
+
+def cago_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
+    """Uses CAGO-CFAR to calculate a threshold that can be used to calculate peaks in a signal.
+
+    Args:
+        x (~numpy.ndarray): Signal.
+        guard_len (int): Number of samples adjacent to the CUT that are ignored.
+        noise_len (int): Number of samples adjacent to the guard padding that are factored into the calculation.
+        mode (str): Specify how to deal with edge cells.
+        l_bound (float or int): Additive lower bound while calculating peak threshold.
+
+    Returns:
+        Tuple [ndarray, ndarray]
+            1. (ndarray): Upper bound of noise threshold.
+            #. (ndarray): Raw noise strength.
+
+    Examples:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> threshold = mm.dsp.cago_(signal, l_bound=20, guard_len=1, noise_len=3)
+        >>> (threshold[0].astype(int), threshold[1].astype(int))
+            (array([72, 97, 80, 87, 90, 97, 80, 87, 90, 86]), array([52, 77, 60, 67, 70, 77, 60, 67, 70, 66]))
+
+        Perform a non-wrapping CFAR thresholding
+
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> threshold = mm.dsp.cago_(signal, l_bound=20, guard_len=1, noise_len=3, mode='constant')
+        >>> (threshold[0].astype(int), threshold[1].astype(int))
+            (array([69, 55, 49, 72, 90, 97, 69, 55, 49, 72]), array([49, 35, 29, 52, 70, 77, 49, 35, 29, 52]))
+
+    """
+    if isinstance(x, list):
+        x = np.array(x)
+
+    l_window, r_window = _cfar_windows(x, guard_len, noise_len, mode)
+
+    # Generate scaling based on mode
+    l_window = l_window / noise_len
+    r_window = r_window / noise_len
+    if mode == 'wrap':
+        noise_floor = np.maximum(l_window, r_window)
+    elif mode == 'constant':
+        edge_cells = guard_len + noise_len
+        noise_floor = np.maximum(l_window, r_window)
+        noise_floor[:edge_cells] = r_window[:edge_cells]
+        noise_floor[-edge_cells:] = l_window[-edge_cells:]
+    else:
+        raise ValueError(f'Mode {mode} is not a supported mode')
+
+    threshold = noise_floor + l_bound
+    return threshold, noise_floor
+
+
+def os(arr, *argv, **kwargs):
+    """Performs non-wrapping OS-CFAR detection on the input array.
+
+    Args:
+        arr (~numpy.ndarray): Noisy array to perform cfar on with log values
+        *argv: See mmwave.dsp.cfar.os\_
+        **kwargs: See mmwave.dsp.cfar.os\_
+
+
+    Returns:
+        ~numpy.ndarray: Boolean array of detected peaks in x.
+
+    Examples:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> det = mm.dsp.os(signal, k=3, scale=1.1, guard_len=0, noise_len=3)
+        >>> det
+            array([False,  True,  True, False, False, False, False,  True, False,
+                    True])
 
     """
     if isinstance(arr, list):
         arr = np.array(arr)
-    threshold = ca_so_go_threshold(arr, *argv, **kwargs)
+    threshold, _ = os_(arr, *argv, **kwargs)
     ret = (arr > threshold)
     return ret
 
 
-def ca_so_go_threshold(arr, r_shift=4, l_bound=5600,
-                       guard_len=4, noise_len=8,
-                       cfar_type=CFAR_CA):
-    """Performs non-wrapping cfar detection on the input array with adjustable methods
-
-    Args:
-        arr (list or array): Noisy array to perform cfar on with log values
-        r_shift (int): 1/2^r_shift detection threshold fraction from sum
-        l_bound (int): Additive lower bound of detection threshold
-        guard_len (int): Left and right side guard samples for leakage protection
-        noise_len (int): Left and right side noise samples after guard samples
-        cfar_type (int): Algorithm variant to create adaptive threshold
-
-    Returns:
-        threshold (np.ndarray): CFAR generated threshold based on inputs (Peak detected if arr[i] > threshold[i])
-
-    """
-    if isinstance(arr, list):
-        arr = np.array(arr)
-    assert type(arr) == np.ndarray
-
-    if cfar_type == CFAR_CA:
-        kernel = np.ones(1 + (2 * guard_len) + (2 * noise_len), dtype=arr.dtype)
-        kernel[noise_len:noise_len + (2 * guard_len) + 1] = 0
-
-        # MODIFIED FROM BASE ALGORITHM
-        threshold = convolve1d(arr, kernel, mode='constant')
-
-        # Adaptive Average
-        avg_arr = np.zeros_like(threshold)
-        avg_arr[guard_len + 1:guard_len + noise_len + 1] += np.arange(1, noise_len + 1, dtype=arr.dtype)
-        avg_arr[guard_len + noise_len + 1:-(guard_len + noise_len) - 1] = 2 * noise_len
-        avg_arr[-(guard_len + noise_len) - 1:-guard_len - 1] += np.arange(noise_len, 0, -1, dtype=arr.dtype)
-        avg_arr[avg_arr < (2 * noise_len)] += noise_len
-        threshold = threshold / avg_arr
-        threshold = threshold + l_bound
-
-        return threshold
-
-    n = len(arr)
-    threshold = np.zeros(n, dtype=arr.dtype)
-    cut_idx = 0
-
-    # First portion
-    while cut_idx < (guard_len + noise_len):
-        right_idx = (cut_idx + 1) + guard_len
-        sum_right = np.sum(arr[right_idx:right_idx + noise_len])
-
-        sum_total = sum_right
-
-        threshold[cut_idx] = (sum_total >> (r_shift - 1)) + l_bound
-        cut_idx += 1
-
-    # Middle portion
-    while cut_idx < (n - (guard_len + noise_len)):
-        left_idx = cut_idx - (guard_len + noise_len)
-        sum_left = np.sum(arr[left_idx:left_idx + noise_len])
-
-        right_idx = (cut_idx + 1) + guard_len
-        sum_right = np.sum(arr[right_idx:right_idx + noise_len])
-
-        # sum_total = None
-        if cfar_type == CFAR_CA:
-            sum_total = sum_left + sum_right
-            threshold[cut_idx] = (sum_total >> r_shift) + l_bound
-        elif cfar_type == CFAR_CAGO:
-            sum_total = sum_left if sum_left > sum_right else sum_right
-            threshold[cut_idx] = (sum_total >> (r_shift - 1)) + l_bound
-        elif cfar_type == CFAR_CASO:
-            sum_total = sum_left if sum_left < sum_right else sum_right
-            threshold[cut_idx] = (sum_total >> (r_shift - 1)) + l_bound
-        else:
-            print('Unknown cfar_type')
-
-        cut_idx += 1
-
-    # Last portion
-    while cut_idx < n:
-        left_idx = cut_idx - (guard_len + noise_len)
-        sum_left = np.sum(arr[left_idx:left_idx + noise_len])
-
-        sum_total = sum_left
-
-        threshold[cut_idx] = (sum_total >> (r_shift - 1)) + l_bound
-        cut_idx += 1
-
-    return threshold
-
-
-def ordered_statistics_wrap(arr, *argv, **kwargs):
-    """Performs non-wrapping cfar detection on the input array with adjustable methods.
-
-    Args:
-        arr (ndarray): Noisy array to perform cfar on with log values
-        *argv:
-        **kwargs:
-
-    Returns:
-        ndarray: Bit mask of size len(arr) with detected objects from arr
-
-    """
-    if isinstance(arr, list):
-        arr = np.array(arr)
-    threshold = ordered_statistics_wrap_threshold(arr, *argv, **kwargs)
-    ret = (arr > threshold)
-    return ret
-
-
-def ordered_statistics_wrap_threshold(arr, k=12, prob_fa=None, noise_len=8, scale=1.1):
-    """Performs non-wrapping cfar detection on the input array with adjustable methods
+def os_(arr, guard_len=0, noise_len=8, k=12, scale=1.0):
+    """Performs non-wrapping OS-CFAR detection on the input array.
 
     Args:
         arr (list or ndarray): Noisy array to perform cfar on with log values
-        k (int): Ordered statistic rank to sample from
-        prob_fa (float): Probability of false alarm, used to calculate scale
-        noise_len (int): Left and right side noise samples after guard samples
-        scale (int): Scaling factor, if not None prob_fa parameter is ignored
+        guard_len (int): Number of samples adjacent to the CUT that are ignored.
+        noise_len (int): Number of samples adjacent to the guard padding that are factored into the calculation.
+        k (int): Ordered statistic rank to sample from.
+        scale (float): Scaling factor.
 
     Returns:
-        threshold (ndarray): Bit mask of size len(arr) with detected objects from arr
+        Tuple [ndarray, ndarray]
+            1. (ndarray): Upper bound of noise threshold.
+            #. (ndarray): Raw noise strength.
 
-    TODO: prob_fa is buggy
+    Examples:
+        >>> signal = np.random.randint(100, size=10)
+        >>> signal
+            array([41, 76, 95, 28, 25, 53, 10, 93, 54, 85])
+        >>> threshold = mm.dsp.os_(signal, k=3, scale=1.1, guard_len=0, noise_len=3)
+        >>> (threshold[0].astype(int), threshold[1].astype(int))
+            (array([93, 59, 58, 58, 83, 59, 59, 58, 83, 83]), array([85, 54, 53, 53, 76, 54, 54, 53, 76, 76]))
 
     """
     if isinstance(arr, list):
         arr = np.array(arr, dtype=np.uint32)
 
-    if not scale:
-        scale = np.log(1 / prob_fa)
-
     n = len(arr)
+    noise_floor = np.zeros(n)
     threshold = np.zeros(n, dtype=np.float32)
-    cut_idx = 0
+    cut_idx = -1
 
     # Initial CUT
-    left_idx = list(np.arange(n - noise_len, n))
-    right_idx = list(np.arange(1, 1 + noise_len))
-    window = np.append(arr[left_idx], arr[right_idx])
-    window.partition(k)
-    threshold[cut_idx] = window[k] * scale
+    left_idx = list(np.arange(n - noise_len - guard_len - 1, n - guard_len - 1))
+    right_idx = list(np.arange(guard_len, guard_len + noise_len))
 
     # All other CUTs
-    while cut_idx < n:
+    while cut_idx < (n - 1):
+        cut_idx += 1
+
         left_idx.pop(0)
         left_idx.append((cut_idx - 1) % n)
 
         right_idx.pop(0)
-        right_idx.append((cut_idx + noise_len) % n)
+        right_idx.append((cut_idx + guard_len + noise_len) % n)
 
-        window = np.append(arr[left_idx], arr[right_idx])
+        window = np.concatenate((arr[left_idx], arr[right_idx]))
         window.partition(k)
-        threshold[cut_idx] = window[k] * scale
+        noise_floor[cut_idx] = window[k]
+        threshold[cut_idx] = noise_floor[cut_idx] * scale
 
-        cut_idx += 1
+    return threshold, noise_floor
 
-    return threshold
+
+def _cfar_windows(x, guard_len, noise_len, mode):
+    if type(x) != np.ndarray:
+        raise TypeError(f'Expected array-like input got {type(x)}')
+
+    # Create kernels
+    r_kernel = np.zeros(1 + (2 * guard_len) + (2 * noise_len), dtype=x.dtype)
+    r_kernel[:noise_len] = 1
+    l_kernel = r_kernel[::-1]
+
+    # Do initial convolutions
+    l_window = convolve1d(x, l_kernel, mode=mode)
+    r_window = convolve1d(x, r_kernel, mode=mode)
+
+    return l_window, r_window
 
 
 WRAP_UP_LIST_IDX = lambda x, total: x if x >= 0 else x + total
@@ -554,5 +655,3 @@ def peak_grouping_qualified(obj_raw,
         obj_out = obj_out[:MAX_OBJ_OUT, ...]
 
     return obj_out
-
-
