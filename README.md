@@ -75,5 +75,19 @@ adc_data = dca.read()
 radar_cube = mm.dsp.range_processing(adc_data)
 ```
 
+## Citation
+
+Please cite OpenRadar in your publications if it helps your research. Here is an example BibTeX entry:
+
+```@misc{openradar2019,
+  author = {Pan, Edwin and Tang, Jingning and Kosaka, Dash and Yao, Ruihao and Gupta, Arjun},
+  title = {OpenRadar},
+  year = {2019},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/presenseradar/openradar}}
+}
+```
+
 ## Acknowledgement
 The PreSense team wants to thank Prof. [Sanjay Patel](https://ece.illinois.edu/directory/profile/sjp), without whom this project wouldn't be possible. We are also grateful for the generous sponsorship from The IBM-ILLINOIS Center for Cognitive Computing Systems Research ([C3SR](https://www.c3sr.com/)) and the guidance/leadership from [Jinjun Xiong](https://researcher.watson.ibm.com/researcher/view.php?person=us-jinjun) of IBM and Prof. [Wen-Mei Hwu](https://ece.illinois.edu/directory/profile/w-hwu). Special thanks to Prof. [Haitham Hassanieh](http://haitham.ece.illinois.edu/) and Prof. [Minh M. Do](http://minhdo.ece.illinois.edu/) for the techical advice and Texas Instruments&trade; for the hardware support.
