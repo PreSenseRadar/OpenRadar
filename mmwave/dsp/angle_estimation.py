@@ -14,7 +14,7 @@ import numpy as np
 from .utils import *
 from . import compensation
 from scipy.signal import find_peaks
-
+import warnings
 
 def azimuth_processing(radar_cube, det_obj_2d, config, window_type_2d=None):
     """Calculate the X/Y coordinates for all detected objects.
@@ -253,17 +253,26 @@ def aoa_capon(x, steering_vector, magnitude=False):
 
 # ------------------------------- HELPER FUNCTIONS -------------------------------
 
-def cov_matrix(input_data):
-    """ Calculates the covariance matrix (Rxx) for a given set of input data (x=inputData)
+def cov_matrix(x):
+    """ Calculates the spatial covariance matrix (Rxx) for a given set of input data (x=inputData). 
+        Assumes rows denote Vrx axis.
 
     Args:
-        input_data (ndarray): A 2D-Array with shape (rx, adc_samples) slice of the output of the 1D range fft
+        x (ndarray): A 2D-Array with shape (rx, adc_samples) slice of the output of the 1D range fft
 
     Returns:
         Rxx (ndarray): A 2D-Array with shape (rx, rx)
     """
-    _, num_adc_samples = input_data.shape
-    Rxx = input_data @ np.conjugate(input_data.T)
+    
+    if x.ndim > 2:
+        raise ValueError("x has more than 2 dimensions.")
+
+    if x.shape[0] > x.shape[1]:
+        warnings.warn("cov_matrix input should have Vrx as rows. Needs to be transposed", RuntimeWarning)
+        x = x.T
+
+    _, num_adc_samples = x.shape
+    Rxx = x @ np.conjugate(x.T)
     Rxx = np.divide(Rxx, num_adc_samples)
 
     return Rxx
@@ -927,7 +936,7 @@ def beamforming_naive_mixed_xyz(azimuth_input, input_ranges, range_resolution, m
 
     for i, inputSignal in enumerate(azimuth_input):
         if method == 'Capon':
-            doa_spectrum, _ = aoa_capon(steering_vec, np.reshape(inputSignal[:8], (8, 1)))
+            doa_spectrum, _ = aoa_capon(np.reshape(inputSignal[:8], (8, 1)).T, steering_vec)
             doa_spectrum = np.abs(doa_spectrum)
         elif method == 'Bartlett':
             doa_spectrum = aoa_bartlett(steering_vec, np.reshape(inputSignal[:8], (8, 1)), axis=0)

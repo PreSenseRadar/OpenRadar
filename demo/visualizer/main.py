@@ -39,9 +39,9 @@ numAngleBins = 64
 range_resolution, bandwidth = dsp.range_resolution(numADCSamples)
 doppler_resolution = dsp.doppler_resolution(bandwidth)
 
-plotRangeDopp = False  
+plotRangeDopp = True  
 plot2DscatterXY = False  
-plot2DscatterXZ = True  
+plot2DscatterXZ = False  
 plot3Dscatter = False  
 plotCustomPlt = False
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
         dataCube = adc_data
 
     for i, frame in enumerate(dataCube):
-        # print(i,end=',') # Frame tracker
+#        print(i,end=',') # Frame tracker
         # (2) Range Processing
         from mmwave.dsp.utils import Window
 
@@ -111,7 +111,7 @@ if __name__ == '__main__':
         numChirpsPerFrame, numRxAntennas, numADCSamples), "[ERROR] Radar cube is not the correct shape!"
 
         # (3) Doppler Processing 
-        det_matrix, aoa_input = dsp.doppler_processing(radar_cube, num_tx_antennas=3, clutter_removal_enabled=True)
+        det_matrix, aoa_input = dsp.doppler_processing(radar_cube, num_tx_antennas=3, clutter_removal_enabled=True, window_type_2d=Window.HAMMING)
 
         # --- Show output
         if plotRangeDopp:
@@ -120,6 +120,7 @@ if __name__ == '__main__':
                 ims.append((plt.imshow(det_matrix_vis / det_matrix_vis.max()),))
             else:
                 plt.imshow(det_matrix_vis / det_matrix_vis.max())
+                plt.title("Range-Doppler plot " + str(i))
                 plt.pause(0.05)
                 plt.clf()
 
@@ -216,6 +217,8 @@ if __name__ == '__main__':
                     max_size = max(cluster_np)
 
         # (6) Visualization
+        if plotRangeDopp:
+            continue
         if plot2DscatterXY or plot2DscatterXZ:
 
             if plot2DscatterXY:

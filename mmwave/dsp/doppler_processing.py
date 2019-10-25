@@ -106,7 +106,9 @@ def doppler_processing(radar_cube,
         # numChirpsPerFrame = num_doppler_bins * num_tx_antennas as designed.
         # Antennas associated to tx1 (Ping) are 0:4 and to tx2 (Pong) are 5:8.
         fft2d_in = separate_tx(radar_cube, num_tx_antennas, vx_axis=1, axis=0)
-
+    else:
+        fft2d_in = radar_cube
+        
     # (Optional) Static Clutter Removal
     if clutter_removal_enabled:
         fft2d_in = compensation.clutter_removal(fft2d_in, axis=0)
