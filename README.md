@@ -79,7 +79,8 @@ radar_cube = mm.dsp.range_processing(adc_data)
 
 Please cite OpenRadar in your publications if it helps your research. Here is an example BibTeX entry:
 
-```@misc{openradar2019,
+```
+@misc{openradar2019,
   author = {Pan, Edwin and Tang, Jingning and Kosaka, Dash and Yao, Ruihao and Gupta, Arjun},
   title = {OpenRadar},
   year = {2019},
