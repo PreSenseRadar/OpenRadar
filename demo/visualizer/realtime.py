@@ -11,10 +11,11 @@
 # ==============================================================================
 
 import numpy as np
+import argparse
 import mmwave.dsp as dsp
 import mmwave.clustering as clu
 from mmwave.dataloader import DCA1000
-from demo.Lab0008.lab0008_visualize import ellipse_visualize
+from demo.visualizer.visualize import ellipse_visualize
 
 import matplotlib.pyplot as plt
 
@@ -42,6 +43,20 @@ plot2DscatterXY = True
 plot2DscatterXZ = False  
 plot3Dscatter = False  
 plotCustomPlt = False
+
+parser = argparse.ArgumentParser(description='Visualization of different radar output with TI mmWave radar platform')
+parser.add_argument('--plot', dest='plot_choice', type=int, default=1,
+                    help='The plot that will be used. [1=Range Doppler Plot], [2=XY 2D Scatter], [3=XZ 2D Scatter], [4=XYZ 3D Scatter]')            
+args = parser.parse_args()
+
+if args.plot_choice == 1:
+    plotRangeDopp = True
+elif args.plot_choice == 2:
+    plot2DscatterXY = True
+elif args.plot_choice == 3:
+    plot2DscatterXZ = True
+elif plot3Dscatter == 4:
+    plot3Dscatter = True
 
 visTrigger = plot2DscatterXY + plot2DscatterXZ + plot3Dscatter + plotRangeDopp + plotCustomPlt
 assert visTrigger < 2, "Can only choose to plot one type of plot at once"

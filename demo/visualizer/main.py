@@ -42,13 +42,9 @@ doppler_resolution = dsp.doppler_resolution(bandwidth)
 
 plotRangeDopp = False  
 plot2DscatterXY = False  
-plot2DscatterXZ = True  
+plot2DscatterXZ = False
 plot3Dscatter = False  
 plotCustomPlt = False
-
-plotMakeMovie = False
-makeMovieTitle = " "
-makeMovieDirectory = "./test_plot3Dscatter.mp4"
 
 visTrigger = plot2DscatterXY + plot2DscatterXZ + plot3Dscatter + plotRangeDopp + plotCustomPlt
 assert visTrigger < 2, "Can only choose to plot one type of plot at once"
@@ -75,9 +71,26 @@ if __name__ == '__main__':
     max_size = 0
 
     parser = argparse.ArgumentParser(description='Visualization of different radar output with TI mmWave radar platform')
-    parser.add_argument('-d', '--adc_data', default='./data/1_person_walking_128loops.bin', metavar='', 
-                        help='file path for ADC binary data (default is ./data/circle.bin)')
+    parser.add_argument('--adc_data', dest ='adc_data', default='./data/1_person_walking_128loops.bin',
+                        help='file path for ADC binary data (default is ./data/1_person_walking_128loops.bin)')
+    parser.add_argument('--movie',dest="plot_make_movie", type=bool, default=False,
+                        help='Output as movie (.mp4)')
+    parser.add_argument('--movie_dir', dest='movie_dir', type=str, default = './movie.mp4',
+                        help='The directory where generated movies will be placed')
+    parser.add_argument('--movie_title', dest='movie_title', type=str, default = '',
+                        help='The title of the movie that will be made')
+    parser.add_argument('--plot', dest='plot_choice', type=int, default=1,
+                        help='The plot that will be used. [1=Range Doppler Plot], [2=XY 2D Scatter], [3=XZ 2D Scatter], [4=XYZ 3D Scatter]')            
     args = parser.parse_args()
+
+    if args.plot_choice == 1:
+        plotRangeDopp = True
+    elif args.plot_choice == 2:
+        plot2DscatterXY = True
+    elif args.plot_choice == 3:
+        plot2DscatterXZ = True
+    elif plot3Dscatter == 4:
+        plot3Dscatter = True
 
     # (1) Reading in adc data
     adc_data = parse_DCA1000(args.adc_data, 
@@ -89,7 +102,7 @@ if __name__ == '__main__':
     # (1.5) Required Plot Declarations
     if plot2DscatterXY or plot2DscatterXZ:
         fig, axes = plt.subplots(1, 2)
-    elif plot3Dscatter and plotMakeMovie:
+    elif plot3Dscatter and args.plot_make_movie:
         fig = plt.figure()
         nice = Axes3D(fig)
     elif plot3Dscatter:
@@ -121,7 +134,7 @@ if __name__ == '__main__':
         # --- Show output
         if plotRangeDopp:
             det_matrix_vis = np.fft.fftshift(det_matrix, axes=1)
-            if plotMakeMovie:
+            if args.plot_make_movie:
                 ims.append((plt.imshow(det_matrix_vis / det_matrix_vis.max()),))
             else:
                 plt.imshow(det_matrix_vis / det_matrix_vis.max())
@@ -221,7 +234,9 @@ if __name__ == '__main__':
                     max_size = max(cluster_np)
 
         # (6) Visualization
-        if plot2DscatterXY or plot2DscatterXZ:
+        if plotRangeDopp:
+            continue
+        elif plot2DscatterXY or plot2DscatterXZ:
 
             if plot2DscatterXY:
                 xyzVec = xyzVec[:, (np.abs(xyzVec[2]) < 1.5)]
@@ -249,10 +264,10 @@ if __name__ == '__main__':
                 axes[1].set_xlabel('Azimuth')
                 axes[1].grid(b=True)
 
-            if plotMakeMovie and plot2DscatterXY:
+            if args.plot_make_movie and plot2DscatterXY:
                 ims.append((axes[0].scatter(xyzVec[0], xyzVec[1], c='r', marker='o', s=2),
                             axes[1].scatter(xyzVecN[0], xyzVecN[1], c='b', marker='o', s=2)))
-            elif plotMakeMovie and plot2DscatterXZ:
+            elif args.plot_make_movie and plot2DscatterXZ:
                 ims.append((axes[0].scatter(xyzVec[0], xyzVec[2], c='r', marker='o', s=2),
                             axes[1].scatter(xyzVecN[0], xyzVecN[2], c='b', marker='o', s=2)))
             elif plot2DscatterXY:
@@ -267,7 +282,7 @@ if __name__ == '__main__':
                 plt.pause(0.1)
                 axes[0].clear()
                 axes[1].clear()
-        elif plot3Dscatter and plotMakeMovie:
+        elif plot3Dscatter and args.plot_make_movie:
             nice.set_zlim3d(bottom=-5, top=5)
             nice.set_ylim(bottom=0, top=10)
             nice.set_xlim(left=-4, right=4)
@@ -287,5 +302,5 @@ if __name__ == '__main__':
         else:
             sys.exit("Unknown plot options.")
 
-    if visTrigger and plotMakeMovie:
-        movieMaker(fig, ims, makeMovieTitle, makeMovieDirectory)
+    if visTrigger and args.plot_make_movie:
+        movieMaker(fig, ims, args.movie_title, args.movie_dir)
