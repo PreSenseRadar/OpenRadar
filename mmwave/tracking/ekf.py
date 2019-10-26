@@ -27,7 +27,7 @@ class EKF:
                                                             bound_box=[(0., 0., 0., 0.), (0., 0., 0., 0.)],
                                                             static_box=[(0., 0., 0., 0.), (0., 0., 0., 0.)])
         app_gating_params = ekf_utils.gtrack_gatingParams(volume=4., params=[(3., 2., 0.)])
-        app_allocation_params = ekf_utils.gtrack_allocationParams(snrThre=50., velocityThre=.01, pointsThre=20,
+        app_allocation_params = ekf_utils.gtrack_allocationParams(snrThre=50., velocityThre=.01, pointsThre=40,
                                                                   maxDistanceThre=.75, maxVelThre=2)
         app_std_sigma = ekf_utils.gtrack_varParams(lengthStd=.289, widthStd=.289, dopplerStd=1.)
 
