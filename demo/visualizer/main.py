@@ -11,10 +11,11 @@
 # ==============================================================================
 
 import sys
+import argparse
 import numpy as np
 import mmwave.dsp as dsp
 import mmwave.clustering as clu
-from mmwave.dataloader import DCA1000
+from mmwave.dataloader import parse_DCA1000
 from demo.visualizer.visualize import ellipse_visualize
 
 import matplotlib.pyplot as plt
@@ -73,13 +74,17 @@ if __name__ == '__main__':
     ims = []
     max_size = 0
 
+    parser = argparse.ArgumentParser(description='Visualization of different radar output with TI mmWave radar platform')
+    parser.add_argument('-d', '--adc_data', default='./data/1_person_walking_128loops.bin', metavar='', 
+                        help='file path for ADC binary data (default is ./data/circle.bin)')
+    args = parser.parse_args()
+
     # (1) Reading in adc data
-    if loadData:
-        adc_data = np.fromfile('./data/1_person_walking_128loops.bin', dtype=np.uint16)
-        adc_data = adc_data.reshape(numFrames, -1)
-        adc_data = np.apply_along_axis(DCA1000.organize, 1, adc_data, num_chirps=numChirpsPerFrame,
-                                       num_rx=numRxAntennas, num_samples=numADCSamples)
-        print("Data Loaded!")
+    adc_data = parse_DCA1000(args.adc_data, 
+                            num_frames=numFrames,
+                            num_chirps_per_frame=numChirpsPerFrame,
+                            num_physical_receivers=numRxAntennas,
+                            num_adc_samples=numADCSamples)
 
     # (1.5) Required Plot Declarations
     if plot2DscatterXY or plot2DscatterXZ:
