@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     # (1) Reading in adc data
     if loadData:
-        adc_data = np.fromfile('./data/1_person_walking_128loops.bin', dtype=np.uint16)
+        adc_data = np.fromfile('./data/1_person_walking_128loops.bin', dtype=np.int16)
         adc_data = adc_data.reshape(numFrames, -1)
         adc_data = np.apply_along_axis(DCA1000.organize, 1, adc_data, num_chirps=numChirpsPerFrame,
                                        num_rx=numRxAntennas, num_samples=numADCSamples)
