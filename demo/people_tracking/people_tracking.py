@@ -12,13 +12,14 @@
 
 import mmwave as mm
 import mmwave.dsp as dsp
-from mmwave.dataloader import DCA1000
+from mmwave.dataloader import parse_DCA1000
 from mmwave.tracking import EKF
 from mmwave.tracking import gtrack_visualize
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import os
+import argparse
 
 # Radar specific parameters
 NUM_RX = 4
@@ -38,16 +39,20 @@ ANGLE_RANGE = 90
 ANGLE_BINS = (ANGLE_RANGE * 2) // ANGLE_RES + 1
 BINS_PROCESSED = 112
 
-# Read in adc data file
-load_data = True
-if load_data:
-    adc_data = np.fromfile('./data/circle.bin', dtype=np.uint16)    
-    adc_data = adc_data.reshape(NUM_FRAMES, -1)
-    all_data = np.apply_along_axis(DCA1000.organize, 1, adc_data, num_chirps=NUM_CHIRPS*2, num_rx=NUM_RX, num_samples=NUM_ADC_SAMPLES)
+parser = argparse.ArgumentParser(description='Indoor people tracking demo with TI mmWave radar platform')
+parser.add_argument('-d', '--adc_data', default='./data/circle.bin', metavar='', 
+                    help='file path for ADC binary data (default is ./data/circle.bin)')
+args = parser.parse_args()
 
+# Read in adc data file
+all_data = parse_DCA1000(args.adc_data, 
+                         num_frames=NUM_FRAMES,
+                         num_chirps_per_frame=NUM_CHIRPS*2,
+                         num_physical_receivers=NUM_RX,
+                         num_adc_samples=NUM_ADC_SAMPLES)
 
 # Start DSP processing
-range_azimuth = np.zeros((ANGLE_BINS, BINS_PROCESSED), dtype=np.complex_)
+range_azimuth = np.zeros((ANGLE_BINS, BINS_PROCESSED))
 num_vec, steering_vec = dsp.gen_steering_vec(ANGLE_RANGE, ANGLE_RES, VIRT_ANT)
 tracker = EKF()
     
@@ -64,13 +69,12 @@ for frame in all_data:
     radar_cube = radar_cube - mean            
 
     # --- capon beamforming
-    beamWeights   = np.zeros((VIRT_ANT, BINS_PROCESSED))
+    beamWeights   = np.zeros((VIRT_ANT, BINS_PROCESSED), dtype=np.complex_)
     radar_cube = np.concatenate((radar_cube[0::2, ...], radar_cube[1::2, ...]), axis=1)
     # Note that when replacing with generic doppler estimation functions, radarCube is interleaved and
     # has doppler at the last dimension.
     for i in range(BINS_PROCESSED):
-        range_azimuth[:,i], beamWeights[:,i] = dsp.aoa_capon(steering_vec, radar_cube[:, :, i].T)
-    range_azimuth = np.abs(range_azimuth)
+        range_azimuth[:,i], beamWeights[:,i] = dsp.aoa_capon(radar_cube[:, :, i].T, steering_vec, magnitude=True)
 
     """ 3 (Object Detection) """
     heatmap_log = np.log2(range_azimuth)
@@ -134,6 +138,7 @@ for frame in all_data:
     targetDescr, tNum = tracker.step()
     
     """ 6 (Visualize Output) """
+
     frame = gtrack_visualize.get_empty_frame()
     try:
         frame = gtrack_visualize.update_frame(targetDescr, int(tNum[0]), frame)
