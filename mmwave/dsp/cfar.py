@@ -29,7 +29,7 @@ From https://www.mathworks.com/help/phased/ug/constant-false-alarm-rate-cfar-det
 
 
 def ca(x, *argv, **kwargs):
-    """Detects peaks in signal using CA-CFAR.
+    """Detects peaks in signal using Cell-Averaging CFAR (CA-CFAR).
 
     Args:
         x (~numpy.ndarray): Signal.
@@ -67,7 +67,7 @@ def ca(x, *argv, **kwargs):
 
 
 def ca_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
-    """Uses CA-CFAR to calculate a threshold that can be used to calculate peaks in a signal.
+    """Uses Cell-Averaging CFAR (CA-CFAR) to calculate a threshold that can be used to calculate peaks in a signal.
 
     Args:
         x (~numpy.ndarray): Signal.
@@ -113,7 +113,7 @@ def ca_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
 
 
 def caso(x, *argv, **kwargs):
-    """Detects peaks in signal using CASO-CFAR.
+    """Detects peaks in signal using Cell-Averaging Smallest-Of CFAR (CASO-CFAR).
 
     Args:
         x (~numpy.ndarray): Signal.
@@ -151,7 +151,7 @@ def caso(x, *argv, **kwargs):
 
 
 def caso_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
-    """Uses CASO-CFAR to calculate a threshold that can be used to calculate peaks in a signal.
+    """Uses Cell-Averaging Smallest-Of CFAR (CASO-CFAR) to calculate a threshold that can be used to calculate peaks in a signal.
 
     Args:
         x (~numpy.ndarray): Signal.
@@ -206,7 +206,7 @@ def caso_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
 
 
 def cago(x, *argv, **kwargs):
-    """Detects peaks in signal using CAGO-CFAR.
+    """Detects peaks in signal using Cell-Averaging Greatest-Of CFAR (CAGO-CFAR).
 
     Args:
         x (~numpy.ndarray): Signal.
@@ -244,7 +244,7 @@ def cago(x, *argv, **kwargs):
 
 
 def cago_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
-    """Uses CAGO-CFAR to calculate a threshold that can be used to calculate peaks in a signal.
+    """Uses Cell-Averaging Greatest-Of CFAR (CAGO-CFAR) to calculate a threshold that can be used to calculate peaks in a signal.
 
     Args:
         x (~numpy.ndarray): Signal.
@@ -298,11 +298,11 @@ def cago_(x, guard_len=4, noise_len=8, mode='wrap', l_bound=4000):
     return threshold, noise_floor
 
 
-def os(arr, *argv, **kwargs):
-    """Performs non-wrapping OS-CFAR detection on the input array.
+def os(x, *argv, **kwargs):
+    """Performs Ordered-Statistic CFAR (OS-CFAR) detection on the input array.
 
     Args:
-        arr (~numpy.ndarray): Noisy array to perform cfar on with log values
+        x (~numpy.ndarray): Noisy array to perform cfar on with log values
         *argv: See mmwave.dsp.cfar.os\_
         **kwargs: See mmwave.dsp.cfar.os\_
 
@@ -320,18 +320,18 @@ def os(arr, *argv, **kwargs):
                     True])
 
     """
-    if isinstance(arr, list):
-        arr = np.array(arr)
-    threshold, _ = os_(arr, *argv, **kwargs)
-    ret = (arr > threshold)
+    if isinstance(x, list):
+        x = np.array(x)
+    threshold, _ = os_(x, *argv, **kwargs)
+    ret = (x > threshold)
     return ret
 
 
-def os_(arr, guard_len=0, noise_len=8, k=12, scale=1.0):
-    """Performs non-wrapping OS-CFAR detection on the input array.
+def os_(x, guard_len=0, noise_len=8, k=12, scale=1.0):
+    """Performs Ordered-Statistic CFAR (OS-CFAR) detection on the input array.
 
     Args:
-        arr (list or ndarray): Noisy array to perform cfar on with log values
+        x (~numpy.ndarray): Noisy array to perform cfar on with log values
         guard_len (int): Number of samples adjacent to the CUT that are ignored.
         noise_len (int): Number of samples adjacent to the guard padding that are factored into the calculation.
         k (int): Ordered statistic rank to sample from.
@@ -351,10 +351,10 @@ def os_(arr, guard_len=0, noise_len=8, k=12, scale=1.0):
             (array([93, 59, 58, 58, 83, 59, 59, 58, 83, 83]), array([85, 54, 53, 53, 76, 54, 54, 53, 76, 76]))
 
     """
-    if isinstance(arr, list):
-        arr = np.array(arr, dtype=np.uint32)
+    if isinstance(x, list):
+        x = np.array(x, dtype=np.uint32)
 
-    n = len(arr)
+    n = len(x)
     noise_floor = np.zeros(n)
     threshold = np.zeros(n, dtype=np.float32)
     cut_idx = -1
@@ -373,7 +373,7 @@ def os_(arr, guard_len=0, noise_len=8, k=12, scale=1.0):
         right_idx.pop(0)
         right_idx.append((cut_idx + guard_len + noise_len) % n)
 
-        window = np.concatenate((arr[left_idx], arr[right_idx]))
+        window = np.concatenate((x[left_idx], x[right_idx]))
         window.partition(k)
         noise_floor[cut_idx] = window[k]
         threshold[cut_idx] = noise_floor[cut_idx] * scale
