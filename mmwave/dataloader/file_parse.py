@@ -22,10 +22,6 @@ def parse_raw_adc(source_fp, dest_fp):
         meta data and is merged with actual pure adc data. Part of the purpose of this function is to remove this
         meta data.
 
-    Note:
-        TODO: Support zero fill missing packets
-        TODO: Support reordering packets
-
     Args:
         source_fp (str): Path to raw binary adc data.
         dest_fp (str): Path to output cleaned binary adc data.
@@ -57,9 +53,18 @@ def parse_raw_adc(source_fp, dest_fp):
             adc_data.append(buff[buff_pos:buff_pos + packet_length])
             buff_pos += packet_length
 
-        else:  # TODO: HANDLE PACKET REORDERING
-            raise ValueError(f'Got packet number {packet_num} but expected {packets_recv}.'
-                             f'Current function version does not support out-of-order packet data.')
+        # Zero fill array
+        elif packets_recv < packet_num:
+            while packets_recv < packet_num:
+                adc_data.append(np.zeros(packet_length))
+                packets_recv += 1
+            adc_data.append(buff[buff_pos:buff_pos + packet_length])
+            buff_pos += packet_length
+
+        # Place packet in correct place
+        else:
+            adc_data[packet_num-1] = buff[buff_pos:buff_pos + packet_length]
+            buff_pos += packet_length
 
     adc_data = np.concatenate(adc_data)
 

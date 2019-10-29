@@ -5,13 +5,17 @@ mmwave.dsp.cfar
 
 .. autofunction:: mmwave.dsp.cfar.ca_
 
-.. autofunction:: mmwave.dsp.cfar.ca_so_go
+.. autofunction:: mmwave.dsp.cfar.caso
 
-.. autofunction:: mmwave.dsp.cfar.ca_so_go_threshold
+.. autofunction:: mmwave.dsp.cfar.caso_
 
-.. autofunction:: mmwave.dsp.cfar.ordered_statistics_wrap
+.. autofunction:: mmwave.dsp.cfar.cago
 
-.. autofunction:: mmwave.dsp.cfar.ordered_statistics_wrap_threshold
+.. autofunction:: mmwave.dsp.cfar.cago_
+
+.. autofunction:: mmwave.dsp.cfar.os
+
+.. autofunction:: mmwave.dsp.cfar.os_
 
 .. autofunction:: mmwave.dsp.cfar.peak_grouping
 
