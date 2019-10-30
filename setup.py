@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="mmwave",
-    version="0.9.0",
+    name="openradar",
+    version="1.0.0",
     author="Edwin Pan, Jingning Tang, Dashiell Kosaka, Arjun Gupta, Ruihao Yao",
     author_email="presenseradar@gmail.com",
     description="A mmWave radar data processing library",
