@@ -171,7 +171,6 @@ if __name__ == '__main__':
         peakValThresholds2 = np.array([[4, 275], [1, 400], [500, 0]])
         detObj2D = dsp.range_based_pruning(detObj2D, SNRThresholds2, peakValThresholds2, numRangeBins, 0.5, range_resolution)
 
-
         azimuthInput = aoa_input[detObj2D['rangeIdx'], :, detObj2D['dopplerIdx']]
 
         x, y, z = dsp.naive_xyz(azimuthInput.T)
