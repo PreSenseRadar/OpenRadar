@@ -50,10 +50,10 @@ class DCA1000:
     """Software interface to the DCA1000 EVM board via ethernet.
 
     Attributes:
-        static_ip (str): IP to receive data from the FPGA
-        adc_ip (str): IP to send configuration commands to the FPGA
-        data_port (int): Port that the FPGA is using to send data
-        config_port (int): Port that the FPGA is using to read configuration commands from
+        static_ip (str): IP to receive data from the FPGA.
+        adc_ip (str): IP to send configuration commands to the FPGA.
+        data_port (int): Port that the FPGA is using to send data.
+        config_port (int): Port that the FPGA is using to read configuration commands from.
 
 
     General steps are as follows:
@@ -72,12 +72,6 @@ class DCA1000:
     """
 
     def __init__(self, static_ip='192.168.33.30', adc_ip='192.168.33.180', data_port=4098, config_port=4096):
-        # Save network data
-        # self.static_ip = static_ip
-        # self.adc_ip = adc_ip
-        # self.data_port = data_port
-        # self.config_port = config_port
-
         # Create configuration and data destinations
         self.cfg_dest = (adc_ip, config_port)
         self.cfg_recv = (static_ip, config_port)
@@ -107,6 +101,7 @@ class DCA1000:
         self._int16_in_packet = None
         self._int16_in_frame = None
         self.next_frame = None
+        self.last_packet = None
 
         # Will be removed in a later release
         self.sensor_config(128, 3, 4, 128)
@@ -122,6 +117,9 @@ class DCA1000:
             iq (int): Number of parts per samples (complex + real).
             num_bytes (int): Number of bytes per part (int16).
 
+        Returns:
+            None
+
         """
         max_bytes_in_packet = 1456  # TODO: WILL CHANGE BASED ON DCA SETTING
 
@@ -133,9 +131,12 @@ class DCA1000:
         self._int16_in_frame = self._bytes_in_frame // 2
 
         self.next_frame = None
+        self.last_packet = -100
+
+        print(self._int16_in_frame)
 
     def configure(self):
-        """Initializes and connects to the FPGA
+        """Initializes and connects to the FPGA.
 
         Returns:
             None
@@ -158,7 +159,7 @@ class DCA1000:
         print(self._send_command(CMD.CONFIG_PACKET_DATA_CMD_CODE, '0600', 'c005350c0000'))
 
     def close(self):
-        """Closes the sockets that are used for receiving and sending data
+        """Closes the sockets that are used for receiving and sending data.
 
         Returns:
             None
@@ -167,14 +168,28 @@ class DCA1000:
         self.data_socket.close()
         self.config_socket.close()
 
-    def read(self, timeout=.1):
-        """Read in a single packet via UDP
+    def clear_buffer(self):
+        """Manually Clears the existing receive buffer.
+    
+        Returns:
+            None
+
+        """
+        self.data_socket.settimeout(.001)
+        while True:
+            try:
+                self.data_socket.recvfrom(MAX_PACKET_SIZE)
+            except socket.timeout as e:
+                return
+
+    def read(self, timeout=1):
+        """Read in a single packet via UDP.
 
         Args:
             timeout (float): Time to wait for packet before moving on.
 
         Returns:
-            Full frame as array if successful, else None
+            ~numpy.ndarray: Array containing a full frame of data based on current sensor config.
 
         """
         # Configure
@@ -187,45 +202,64 @@ class DCA1000:
             ret_frame = np.zeros(self._int16_in_frame, dtype=np.int16)
         self.next_frame = np.zeros(self._int16_in_frame, dtype=np.int16)
 
+        # Wait for the start of a new frame
+        state = -1
         while True:
             packet_num, byte_count, packet_data = self._read_data_packet()
-            buff_pointer = ((byte_count // 2) % self._int16_in_frame)
+            buff_pointer = ((byte_count >> 1) % self._int16_in_frame)
+            packet_len = len(packet_data)
+            
+            # Don't lose progress
+            if self.last_packet < packet_num and packet_num < self.last_packet + 10:
+                self.last_packet = -100
+                ret_frame[buff_pointer:buff_pointer+packet_len] = packet_data
+                break
+
+            # Start from scratch
+            else:
+                self.last_packet = -100
+                end_pointer = buff_pointer + packet_len
+                if end_pointer > self._int16_in_frame:             
+                    overflow = end_pointer % self._int16_in_frame
+                    carry = packet_len - overflow
+                    ret_frame = np.zeros(self._int16_in_frame, dtype=np.int16)
+                    ret_frame[:overflow] = packet_data[carry:]
+                    break
+
+        # Get the rest of the packets
+        while True:
+            packet_num, byte_count, packet_data = self._read_data_packet()
+            buff_pointer = ((byte_count >> 1) % self._int16_in_frame)
+            packet_len = len(packet_data)
+
+            # print(byte_count)
+            end_pointer = buff_pointer + packet_len
 
             # Normal packet
-            if ((packet_num - 1) % self._packets_in_frame) <= (packet_num % self._packets_in_frame):
-                ret_frame[buff_pointer:buff_pointer + packet_data.shape[0]] = packet_data
+            if end_pointer < self._int16_in_frame:
+                ret_frame[buff_pointer:end_pointer] = packet_data
 
             # Overflow packet
             else:
-                overflow = self._int16_in_frame - buff_pointer
-                if buff_pointer > 0:
-                    ret_frame[buff_pointer:buff_pointer + overflow] = packet_data[:overflow]
-                    self.next_frame[:packet_data.shape[0]-overflow] = packet_data[overflow:]
-                else:
-                    self.next_frame[:packet_data.shape[0]] = packet_data
-
-                # Try and clear setup next frame before returning
-                # while True:
-                #     try:
-                #         packet_num, byte_count, packet_data = self._read_data_packet()
-                #         buff_pointer = ((byte_count // 2) % self._int16_in_frame)
-                #         self.next_frame[buff_pointer:buff_pointer + packet_data.shape[0]] = packet_data[:]
-                #     except socket.timeout:
-                #         break
-
+                overflow = end_pointer % self._int16_in_frame
+                carry = packet_len - overflow
+                ret_frame[buff_pointer:buff_pointer+carry] = packet_data[:carry]
+                self.next_frame[:overflow] = packet_data[carry:]
+                self.last_packet = -100
                 return ret_frame
+
 
     def _send_command(self, cmd, length='0000', body='', timeout=1):
         """Helper function to send a single commmand to the FPGA
 
         Args:
-            cmd (CMD): Command code to send to the FPGA
-            length (str): Length of the body of the command (if any)
-            body (str): Body information of the command
-            timeout (int): Time in seconds to wait for socket data until timeout
+            cmd (CMD): Command code to send to the FPGA.
+            length (str): Length of the body of the command (if any).
+            body (str): Body information of the command.
+            timeout (int): Time in seconds to wait for socket data until timeout.
 
         Returns:
-            str: Response message
+            str: Response message.
 
         """
         # Create timeout exception
@@ -245,7 +279,10 @@ class DCA1000:
         """Helper function to read in a single ADC packet via UDP
 
         Returns:
-            int: Current packet number, byte count of data that has already been read, raw ADC data in current packet
+            Tuple [int, int, ~numpy.ndarray]
+                1. Current packet number.
+                #. Byte count of data that has already been read (exclusive).
+                #. Raw ADC data.
 
         """
         data, addr = self.data_socket.recvfrom(MAX_PACKET_SIZE)
@@ -255,7 +292,7 @@ class DCA1000:
         return packet_num, byte_count, packet_data
 
     def _listen_for_error(self):
-        """Helper function to try and read in for an error message from the FPGA
+        """Helper function to try and read in for an error message from the FPGA.
 
         Returns:
             None
@@ -280,7 +317,7 @@ class DCA1000:
         """Reorganizes raw ADC data into a full frame
 
         Args:
-            raw_frame (ndarray): Data to format.
+            raw_frame (~numpy.ndarray): Data to format.
             num_chirps (int): Number of chirps included in the frame.
             num_rx (int): Number of receivers used in the frame.
             num_samples (int): Number of ADC samples included in each chirp.
@@ -288,7 +325,7 @@ class DCA1000:
             model (str): Model of the radar chip being used.
 
         Returns:
-            ndarray: Reformatted frame of raw data of shape (num_chirps, num_rx, num_samples)
+            ~numpy.ndarray: Reformatted frame of raw data of shape (num_chirps, num_rx, num_samples).
 
         """
         ret = np.zeros(len(raw_frame) // 2, dtype=np.complex64)
