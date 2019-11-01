@@ -50,7 +50,7 @@ The toolbox is modularized into separate steps
 
 ### Pip installation
 ```
-Coming soon
+pip install openradar
 ```
 
 ### Debug Mode
