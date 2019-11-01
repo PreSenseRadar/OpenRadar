@@ -64,7 +64,7 @@ python setup.py develop
 ## Uninstallation
 
 ```
-pip uninstall mmwave
+pip uninstall openradar
 ```
 
 ## Example Import and Usage
