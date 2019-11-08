@@ -17,3 +17,4 @@ from .doppler_processing import *
 from .range_processing import *
 from .utils import *
 from .noise_removal import *
+from .music import *
