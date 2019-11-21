@@ -1,5 +1,8 @@
 # PreSense mmWave Package
 
+[![Version](https://img.shields.io/pypi/v/ipyvolume.svg)](https://pypi.org/project/openradar/)
+[![Documentation](https://readthedocs.org/projects/openradar/badge/?version=latest)](https://openradar.readthedocs.io/en/latest/?badge=latest)
+
 This is PreSense team's implementation of TI mmwave radar DSP stack and some demos.
 We are grateful for TI, TI's e2e forum and other people's help to make this happen.
 Please star us if you like this repository and please consider citing this repo if you used it in your research.
@@ -47,7 +50,7 @@ The toolbox is modularized into separate steps
 
 ### Pip installation
 ```
-Coming soon
+pip install openradar
 ```
 
 ### Debug Mode
@@ -61,7 +64,7 @@ python setup.py develop
 ## Uninstallation
 
 ```
-pip uninstall mmwave
+pip uninstall openradar
 ```
 
 ## Example Import and Usage
