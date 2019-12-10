@@ -102,6 +102,7 @@ class DCA1000:
         self._int16_in_frame = None
         self.next_frame = None
         self.last_packet = None
+        self.frame_ready = False
 
         # Will be removed in a later release
         self.sensor_config(128, 3, 4, 128)
@@ -132,6 +133,8 @@ class DCA1000:
 
         self.next_frame = None
         self.last_packet = -100
+        self.frame_ready = False
+        self.curr_frame = None
 
         print(self._int16_in_frame)
 
@@ -165,6 +168,7 @@ class DCA1000:
             None
 
         """
+        self.poll_thread.join()
         self.data_socket.close()
         self.config_socket.close()
 
@@ -181,6 +185,53 @@ class DCA1000:
                 self.data_socket.recvfrom(MAX_PACKET_SIZE)
             except socket.timeout as e:
                 return
+
+    def polling(self):
+        import threading
+        self.poll_thread = threading.Thread(target=self._poll)
+        self.poll_thread.start()
+
+
+    def _poll(self):
+        self.data_socket.settimeout(1)
+        ret_frame = np.zeros(self._int16_in_frame, dtype=np.int16)
+
+        num_packets = 0
+        while True:
+            packet_num, byte_count, packet_data = self._read_data_packet()
+            buff_pointer = ((byte_count >> 1) % self._int16_in_frame)
+            packet_len = len(packet_data)
+
+            end_pointer = buff_pointer + packet_len
+            num_packets += 1
+
+            # Normal packet
+            if end_pointer < self._int16_in_frame:
+                ret_frame[buff_pointer:end_pointer] = packet_data
+
+            # Overflow packet
+            else:
+                print(num_packets)
+                num_packets = 0
+                overflow = end_pointer % self._int16_in_frame
+                carry = packet_len - overflow
+                ret_frame[buff_pointer:buff_pointer+carry] = packet_data[:carry]
+
+                self.curr_frame = ret_frame
+                self.frame_ready = True
+
+                ret_frame = np.zeros(self._int16_in_frame, dtype=np.int16)
+                ret_frame[:overflow] = packet_data[carry:]
+
+
+    def get_frame(self):
+
+        while not self.frame_ready:
+            pass
+
+        self.frame_ready = False
+        return self.curr_frame.copy()
+
 
     def read(self, timeout=1):
         """Read in a single packet via UDP.
@@ -204,6 +255,7 @@ class DCA1000:
 
         # Wait for the start of a new frame
         state = -1
+        num_packets = 0
         while True:
             packet_num, byte_count, packet_data = self._read_data_packet()
             buff_pointer = ((byte_count >> 1) % self._int16_in_frame)
@@ -213,6 +265,7 @@ class DCA1000:
             if self.last_packet < packet_num and packet_num < self.last_packet + 10:
                 self.last_packet = -100
                 ret_frame[buff_pointer:buff_pointer+packet_len] = packet_data
+                num_packets += 1
                 break
 
             # Start from scratch
@@ -224,6 +277,7 @@ class DCA1000:
                     carry = packet_len - overflow
                     ret_frame = np.zeros(self._int16_in_frame, dtype=np.int16)
                     ret_frame[:overflow] = packet_data[carry:]
+                    num_packets += 1
                     break
 
         # Get the rest of the packets
@@ -234,6 +288,7 @@ class DCA1000:
 
             # print(byte_count)
             end_pointer = buff_pointer + packet_len
+            num_packets += 1
 
             # Normal packet
             if end_pointer < self._int16_in_frame:
