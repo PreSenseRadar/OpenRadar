@@ -69,9 +69,9 @@ for frame in all_data:
     # Note that when replacing with generic doppler estimation functions, radarCube is interleaved and
     # has doppler at the last dimension.
     for i in range(BINS_PROCESSED):
-        range_azimuth[:,i], beamWeights[:,i] = dsp.aoa_capon(steering_vec, radar_cube[:, :, i].T)
+        range_azimuth[:,i], beamWeights[:,i] = dsp.aoa_capon(radar_cube[:, :, i].T, steering_vec)
     range_azimuth = np.abs(range_azimuth)
-
+    
     """ 3 (Object Detection) """
     heatmap_log = np.log2(range_azimuth)
     
