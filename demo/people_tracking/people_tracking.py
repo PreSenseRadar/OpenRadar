@@ -47,7 +47,7 @@ if load_data:
 
 
 # Start DSP processing
-range_azimuth = np.zeros((ANGLE_BINS, BINS_PROCESSED), dtype=np.complex_)
+range_azimuth = np.zeros((ANGLE_BINS, BINS_PROCESSED))
 num_vec, steering_vec = dsp.gen_steering_vec(ANGLE_RANGE, ANGLE_RES, VIRT_ANT)
 tracker = EKF()
     
@@ -64,13 +64,12 @@ for frame in all_data:
     radar_cube = radar_cube - mean            
 
     # --- capon beamforming
-    beamWeights   = np.zeros((VIRT_ANT, BINS_PROCESSED))
+    beamWeights   = np.zeros((VIRT_ANT, BINS_PROCESSED), dtype=np.complex_)
     radar_cube = np.concatenate((radar_cube[0::2, ...], radar_cube[1::2, ...]), axis=1)
     # Note that when replacing with generic doppler estimation functions, radarCube is interleaved and
     # has doppler at the last dimension.
     for i in range(BINS_PROCESSED):
-        range_azimuth[:,i], beamWeights[:,i] = dsp.aoa_capon(radar_cube[:, :, i].T, steering_vec)
-    range_azimuth = np.abs(range_azimuth)
+        range_azimuth[:,i], beamWeights[:,i] = dsp.aoa_capon(radar_cube[:, :, i].T, steering_vec, magnitude=True)
     
     """ 3 (Object Detection) """
     heatmap_log = np.log2(range_azimuth)
