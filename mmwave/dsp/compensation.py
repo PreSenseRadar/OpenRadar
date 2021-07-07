@@ -159,7 +159,14 @@ def near_field_correction(idx,
         None. azimuth_output is changed in-place.
     """
 
-    LAMBDA_77GHz_MILLIMETER = 3e8 / 77e9
+    # From the mmwave sdk 02.01.00.04 : #define MMWDEMO_XWR16XX_EVM_77GHZ_LAMBDA       (3.8961)
+    #    All length units are in mm. The LAMBDA (wavelength) below is based on 77 GHz
+    #    and corresponds to the actual spacing on the EVM, it is not
+    #    tied to the actual start frequency set in profile config, hence does not
+    #    need to be computed on the fly from that configuration.
+    # lambda = c / f = 3e8 m/s / 77e9 Hz = 0.0038961 m -> in millimeter: 3.8961 mm as above
+    # As all calculations here are meant to be calculated in millimeters, we have to scale lambda accordingly!
+    LAMBDA_77GHz_MILLIMETER = (3e8 / 77e9) * 1000.0
     MMWDEMO_TWO_PI_OVER_LAMBDA = 2.0 * math.pi / LAMBDA_77GHz_MILLIMETER
 
     # Sanity check and check if nearFieldCorrection is necessary.
