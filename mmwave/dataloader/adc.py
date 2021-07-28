@@ -259,7 +259,7 @@ class DCA1000:
         return self._send_command(CMD.RECORD_STOP_CMD_CODE)
 
     @staticmethod
-    def organize(raw_frame, num_chirps, num_rx, num_samples):
+    def organize(raw_frame, num_chirps, num_rx, num_samples, sensor_type='xWR14xx', real=False):
         """Reorganizes raw ADC data into a full frame
 
         Args:
@@ -267,14 +267,60 @@ class DCA1000:
             num_chirps: Number of chirps included in the frame
             num_rx: Number of receivers used in the frame
             num_samples: Number of ADC samples included in each chirp
+            sensor_type: Type of sensor used for measurement, default is xWR14xx
 
         Returns:
             ndarray: Reformatted frame of raw data of shape (num_chirps, num_rx, num_samples)
 
         """
-        ret = np.zeros(len(raw_frame) // 2, dtype=complex)
+        ret = None
 
-        # Separate IQ data
-        ret[0::2] = raw_frame[0::4] + 1j * raw_frame[2::4]
-        ret[1::2] = raw_frame[1::4] + 1j * raw_frame[3::4]
+        sensor_type = self.generalizedSensorType(sensor_type)
+
+        if not real:
+            ret = np.zeros(len(raw_frame) // 2, dtype=complex)
+
+            if sensor_type == 'xWR14xx':
+                for rx in range(num_rx):
+                    ret[rx*num_samples*num_chirps:num_samples*num_chirps*(rx+1)] = raw_frame[rx::num_rx][0::2] + 1j * raw_frame[rx::num_rx][1::2]
+
+            elif sensor_type == 'xWR16xx' or sensor_type == 'IWR6843':
+                #can reshape after calc
+                ret = raw_frame[0::2][0::2] + 1j*raw_frame[0::2][1::2]
+#
+            else:
+                # Separate IQ data
+                # **Original code, untouched**
+                # **Not sure which sensor type this fits**
+                ret[0::2] = raw_frame[0::4] + 1j * raw_frame[2::4]
+                ret[1::2] = raw_frame[1::4] + 1j * raw_frame[3::4]
+        else:
+            ret = np.zeros(len(raw_frame), dtype=np.int16)
+            if sensor_type == 'xWR14xx':
+                for rx in range(num_rx):
+                    ret[rx*num_samples*num_chirps:num_samples*num_chirps*(rx+1)] = raw_frame[rx::num_rx]
+            elif sensor_type == 'xWR16xx' or sensor_type == 'IWR6843':
+                #already in format of shape (numchirp, numrx, numsample)
+                ret = raw_frame
+
         return ret.reshape((num_chirps, num_rx, num_samples))
+
+
+    '''
+        Given sensor type returns generalized name
+
+        Args:
+            sensor_type: The name of the TI sensor used
+
+        Returns:
+            String: The generalized form of the name of the TI sensor used. ex: IWR1438 --> xWR14xx
+    '''
+    def generalizedSensorType(self, sensor_type):
+        general_classes = ['xWR14xx', 'xWR16xx', 'IWR6843']
+
+        for c in general_classes:
+            if c.replace('x','') in sensor_type:
+                return c
+        else:
+            print('Sensor Type ('+ sensor_type +') not supported!')
+
