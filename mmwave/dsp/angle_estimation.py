@@ -239,7 +239,7 @@ def aoa_capon(x, steering_vector, magnitude=False):
 
     Rxx = cov_matrix(x)
     Rxx = forward_backward_avg(Rxx)
-    Rxx_inv = np.linalg.inv(Rxx)
+    Rxx_inv = np.linalg.pinv(Rxx)
     # Calculate Covariance Matrix Rxx
     first = Rxx_inv @ steering_vector.T
     den = np.reciprocal(np.einsum('ij,ij->i', steering_vector.conj(), first.T))
