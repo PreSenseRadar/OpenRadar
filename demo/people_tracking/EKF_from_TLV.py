@@ -10,9 +10,9 @@
 # limitations under the License.
 # ==============================================================================
 
-from mmwave.radars import ti
+import mmwave.dataloader.radars as ti
 from mmwave.tracking import ekf
-from mmwave.tracking import GTRACK_visualize
+from mmwave.tracking import gtrack_visualize
 import time
 import numpy as np
 
@@ -22,7 +22,6 @@ if __name__ == '__main__':
     radar = ti.TI(cli_loc='COM3', data_loc='COM5', mode=1)
     radar._initialize()
 
-    GTRACK_visualize.create()
     while True:
         time.sleep(.1)
         try:
@@ -39,27 +38,27 @@ if __name__ == '__main__':
             continue
         
         if data is not None:
-            frame = GTRACK_visualize.get_empty_frame()
             
+            frame = gtrack_visualize.get_empty_frame()
             tracker.update_point_cloud(ranges, azimuths, dopplers, snrs)
             
             targetDescr, tNum = tracker.step()
 
             try:
-                frame = GTRACK_visualize.update_frame(targetDescr, int(tNum[0]), frame)
+                frame = gtrack_visualize.update_frame(targetDescr, int(tNum[0]), frame)
             except:
                 pass
             try:
-                frame = GTRACK_visualize.draw_points(tracker.point_cloud, len(ranges), frame)
+                frame = gtrack_visualize.draw_points(tracker.point_cloud, len(ranges), frame)
             except:
                 pass
-            if not GTRACK_visualize.show(frame, wait=10):
+            if not gtrack_visualize.show(frame, wait=10):
                 break
         else:
-            frame = GTRACK_visualize.get_empty_frame()
-#            frame = GTRACK_visualize.update_frame(target_desc, 0, frame)
-            if not GTRACK_visualize.show(frame, wait=10):
+            frame = gtrack_visualize.get_empty_frame()
+            # frame = gtrack_visualize.update_frame(target_desc, 0, frame)
+            if not gtrack_visualize.show(frame, wait=10):
                 break
 
-    GTRACK_visualize.destroy()
+    gtrack_visualize.destroy()
     radar.close()
