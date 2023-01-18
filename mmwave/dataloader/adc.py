@@ -42,15 +42,15 @@ class CMD(Enum):
 CONFIG_HEADER = '5aa5'
 CONFIG_STATUS = '0000'
 CONFIG_FOOTER = 'aaee'
-ADC_PARAMS = {'chirps': 128,  # 32
+ADC_PARAMS = {'chirps':64,  # 32
               'rx': 4,
               'tx': 3,
-              'samples': 128,
+              'samples': 512,
               'IQ': 2,
               'bytes': 2}
 # STATIC
 MAX_PACKET_SIZE = 4096
-BYTES_IN_PACKET = 1456
+BYTES_IN_PACKET = 1466-10
 # DYNAMIC
 BYTES_IN_FRAME = (ADC_PARAMS['chirps'] * ADC_PARAMS['rx'] * ADC_PARAMS['tx'] *
                   ADC_PARAMS['IQ'] * ADC_PARAMS['samples'] * ADC_PARAMS['bytes'])
@@ -87,6 +87,8 @@ class DCA1000:
 
     def __init__(self, static_ip='192.168.33.30', adc_ip='192.168.33.180',
                  data_port=4098, config_port=4096):
+        print(f"Bytes in frame clipped {BYTES_IN_FRAME_CLIPPED}")
+        print(f"Bytes in frame         {BYTES_IN_FRAME}")
         # Save network data
         # self.static_ip = static_ip
         # self.adc_ip = adc_ip
@@ -120,8 +122,11 @@ class DCA1000:
 
         self.curr_buff = None
         self.last_frame = None
+        self.next_frame_data=[]
 
         self.lost_packets = None
+        self.previous_packet=0
+        self.already_have_beginning_of_frame=False
 
     def configure(self):
         """Initializes and connects to the FPGA
@@ -172,13 +177,21 @@ class DCA1000:
         # Frame buffer
         ret_frame = np.zeros(UINT16_IN_FRAME, dtype=np.uint16)
 
-        # Wait for start of next frame
-        while True:
-            packet_num, byte_count, packet_data = self._read_data_packet()
-            if byte_count % BYTES_IN_FRAME_CLIPPED == 0:
-                packets_read = 1
-                ret_frame[0:UINT16_IN_PACKET] = packet_data
-                break
+        # instead of wait for next frame, get the already saved data from the previous dca.read
+        #If we already have the previous frame
+        if self.already_have_beginning_of_frame:
+            self.already_have_beginning_of_frame=False
+            packets_read=1
+            ret_frame[0:UINT16_IN_PACKET]=self.frame_first_packet
+        else:
+            # Wait for start of next frame
+            while True:
+                packet_num, byte_count, packet_data = self._read_data_packet()
+                if byte_count % BYTES_IN_FRAME_CLIPPED == 0:
+                    print(byte_count)
+                    packets_read = 1
+                    ret_frame[0:UINT16_IN_PACKET] = packet_data
+                    break
 
         # Read in the rest of the frame            
         while True:
@@ -187,6 +200,8 @@ class DCA1000:
 
             if byte_count % BYTES_IN_FRAME_CLIPPED == 0:
                 self.lost_packets = PACKETS_IN_FRAME_CLIPPED - packets_read
+                self.frame_first_packet=packet_data
+                self.already_have_beginning_of_frame=True
                 return ret_frame
 
             curr_idx = ((packet_num - 1) % PACKETS_IN_FRAME_CLIPPED)
@@ -233,7 +248,13 @@ class DCA1000:
         """
         data, addr = self.data_socket.recvfrom(MAX_PACKET_SIZE)
         packet_num = struct.unpack('<1l', data[:4])[0]
+        # additional stuff
+        # if packet_num-self.previous_packet>1:
+        #     print(f"skipped {packet_num-self.previous_packet-1} packets")
+
+        self.previous_packet=packet_num
         byte_count = struct.unpack('>Q', b'\x00\x00' + data[4:10][::-1])[0]
+
         packet_data = np.frombuffer(data[10:], dtype=np.uint16)
         return packet_num, byte_count, packet_data
 
